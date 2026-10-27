@@ -1,0 +1,12 @@
+##Spring Configuration
+server:
+  port: ${SERVER_PORT:8081}
+spring:
+  application:
+    name: Solicitudes
+  devtools:
+    add-properties: false
+  h2:
+    console:
+      enabled: true
+      path: /h2
