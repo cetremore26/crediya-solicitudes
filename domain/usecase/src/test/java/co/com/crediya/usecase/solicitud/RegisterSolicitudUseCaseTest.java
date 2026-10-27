@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.com.crediya.model.auth.AuthenticatedUser;
+import co.com.crediya.model.auth.Rol;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.model.solicitud.gateways.ClienteGateway;
@@ -26,12 +29,15 @@ class RegisterSolicitudUseCaseTest {
             .build();
     private final TipoPrestamoRepository tipoPrestamoRepository = TIPO_EXISTENTE::equals;
     private final ClienteGateway clienteGateway = DOCUMENTO_EXISTENTE::equals;
+    private static final AuthenticatedUser CLIENTE = new AuthenticatedUser(
+            UUID.randomUUID(), "ana@example.com", Rol.CLIENTE, DOCUMENTO_EXISTENTE);
+
     private final RegisterSolicitudUseCase useCase = new RegisterSolicitudUseCase(
             solicitudRepository, tipoPrestamoRepository, clienteGateway);
 
     @Test
     void registersSolicitudWithPendingReviewStatus() {
-        Solicitud saved = useCase.execute(validSolicitud());
+        Solicitud saved = useCase.execute(validSolicitud(), CLIENTE);
 
         assertNotNull(saved.getId());
         assertEquals(EstadoSolicitud.PENDIENTE_DE_REVISION, saved.getEstado());
@@ -42,7 +48,7 @@ class RegisterSolicitudUseCaseTest {
         Solicitud saved = useCase.execute(validSolicitud().toBuilder()
                 .documentoIdentidad(" " + DOCUMENTO_EXISTENTE + " ")
                 .tipoPrestamo(" libre_inversion ")
-                .build());
+                .build(), CLIENTE);
 
         assertEquals(DOCUMENTO_EXISTENTE, saved.getDocumentoIdentidad());
         assertEquals(TIPO_EXISTENTE, saved.getTipoPrestamo());
@@ -50,7 +56,7 @@ class RegisterSolicitudUseCaseTest {
 
     @Test
     void rejectsNullSolicitud() {
-        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null));
+        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, CLIENTE));
     }
 
     @Test
@@ -67,21 +73,42 @@ class RegisterSolicitudUseCaseTest {
                 validSolicitud().toBuilder().tipoPrestamo(" ").build());
 
         invalidSolicitudes.forEach(solicitud -> assertThrows(
-                SolicitudValidationException.class, () -> useCase.execute(solicitud)));
+                SolicitudValidationException.class, () -> useCase.execute(solicitud, CLIENTE)));
     }
 
     @Test
     void rejectsUnknownLoanType() {
         Solicitud solicitud = validSolicitud().toBuilder().tipoPrestamo("INEXISTENTE").build();
 
-        assertThrows(TipoPrestamoNoExisteException.class, () -> useCase.execute(solicitud));
+        assertThrows(TipoPrestamoNoExisteException.class, () -> useCase.execute(solicitud, CLIENTE));
     }
 
     @Test
     void rejectsUnknownClient() {
         Solicitud solicitud = validSolicitud().toBuilder().documentoIdentidad("99999999").build();
+        AuthenticatedUser unknownClient = new AuthenticatedUser(
+                UUID.randomUUID(), "nuevo@example.com", Rol.CLIENTE, "99999999");
 
-        assertThrows(ClienteNoEncontradoException.class, () -> useCase.execute(solicitud));
+        assertThrows(ClienteNoEncontradoException.class,
+                () -> useCase.execute(solicitud, unknownClient));
+    }
+
+    @Test
+    void rejectsClientRegisteringForAnotherPerson() {
+        AuthenticatedUser otherClient = new AuthenticatedUser(
+                UUID.randomUUID(), "otro@example.com", Rol.CLIENTE, "555555555");
+
+        assertThrows(AccesoDenegadoException.class,
+                () -> useCase.execute(validSolicitud(), otherClient));
+    }
+
+    @Test
+    void rejectsStaffAndMissingRequester() {
+        AuthenticatedUser admin = new AuthenticatedUser(
+                UUID.randomUUID(), "admin@example.com", Rol.ADMIN, null);
+
+        assertThrows(AccesoDenegadoException.class, () -> useCase.execute(validSolicitud(), admin));
+        assertThrows(AccesoDenegadoException.class, () -> useCase.execute(validSolicitud(), null));
     }
 
     private Solicitud validSolicitud() {

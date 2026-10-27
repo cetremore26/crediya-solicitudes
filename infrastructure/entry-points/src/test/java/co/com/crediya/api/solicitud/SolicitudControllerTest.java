@@ -1,6 +1,7 @@
 package co.com.crediya.api.solicitud;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,17 +11,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.com.crediya.api.ApiExceptionHandler;
+import co.com.crediya.model.auth.AuthenticatedUser;
+import co.com.crediya.model.auth.Rol;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.usecase.solicitud.RegisterSolicitudUseCase;
 import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -36,6 +42,9 @@ class SolicitudControllerTest {
             }
             """;
 
+    private static final AuthenticatedUser CLIENTE = new AuthenticatedUser(
+            UUID.randomUUID(), "ana@example.com", Rol.CLIENTE, "1020304050");
+
     private RegisterSolicitudUseCase useCase;
     private MockMvc mockMvc;
 
@@ -49,7 +58,7 @@ class SolicitudControllerTest {
 
     @Test
     void registersSolicitudAndReturnsCreatedWithPendingStatus() throws Exception {
-        when(useCase.execute(any(Solicitud.class))).thenReturn(Solicitud.builder()
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenReturn(Solicitud.builder()
                 .id(UUID.randomUUID())
                 .documentoIdentidad("1020304050")
                 .monto(new BigDecimal("5000000"))
@@ -64,12 +73,12 @@ class SolicitudControllerTest {
                 .andExpect(jsonPath("$.tipo_prestamo").value("LIBRE_INVERSION"))
                 .andExpect(jsonPath("$.documento_identidad").value("1020304050"));
 
-        verify(useCase).execute(any(Solicitud.class));
+        verify(useCase).execute(any(Solicitud.class), eq(CLIENTE));
     }
 
     @Test
     void returnsBadRequestForValidationErrors() throws Exception {
-        when(useCase.execute(any(Solicitud.class)))
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
                 .thenThrow(new SolicitudValidationException("El monto debe ser mayor a cero."));
 
         mockMvc.perform(postJson(VALID_BODY))
@@ -79,7 +88,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsBadRequestForUnknownLoanType() throws Exception {
-        when(useCase.execute(any(Solicitud.class))).thenThrow(new TipoPrestamoNoExisteException());
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new TipoPrestamoNoExisteException());
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isBadRequest())
@@ -87,8 +96,18 @@ class SolicitudControllerTest {
     }
 
     @Test
+    void returnsForbiddenWhenClientActsForAnotherPerson() throws Exception {
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
+                .thenThrow(new AccesoDenegadoException());
+
+        mockMvc.perform(postJson(VALID_BODY))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.codigo").value("ACCESO_DENEGADO"));
+    }
+
+    @Test
     void returnsNotFoundForUnknownClient() throws Exception {
-        when(useCase.execute(any(Solicitud.class))).thenThrow(new ClienteNoEncontradoException());
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new ClienteNoEncontradoException());
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isNotFound())
@@ -97,7 +116,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsServiceUnavailableWhenClientServiceFails() throws Exception {
-        when(useCase.execute(any(Solicitud.class)))
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
                 .thenThrow(new ClienteServiceUnavailableException(new RuntimeException("boom")));
 
         mockMvc.perform(postJson(VALID_BODY))
@@ -107,7 +126,7 @@ class SolicitudControllerTest {
 
     @Test
     void hidesUnexpectedErrorDetails() throws Exception {
-        when(useCase.execute(any(Solicitud.class))).thenThrow(new IllegalStateException("secreto"));
+        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new IllegalStateException("secreto"));
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isInternalServerError())
@@ -138,6 +157,9 @@ class SolicitudControllerTest {
     }
 
     private MockHttpServletRequestBuilder postJson(String body) {
-        return post(URL).contentType("application/json").content(body);
+        return post(URL)
+                .contentType("application/json")
+                .content(body)
+                .principal(new UsernamePasswordAuthenticationToken(CLIENTE, null, List.of()));
     }
 }

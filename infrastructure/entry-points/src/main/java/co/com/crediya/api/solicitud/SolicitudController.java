@@ -1,6 +1,7 @@
 package co.com.crediya.api.solicitud;
 
 import co.com.crediya.api.ApiErrorResponse;
+import co.com.crediya.model.auth.AuthenticatedUser;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.usecase.solicitud.RegisterSolicitudUseCase;
 import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,12 +42,16 @@ public class SolicitudController {
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "503", description = "No fue posible verificar al cliente",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<SolicitudResponse> register(@RequestBody SolicitudRequest request) {
+    @ApiResponse(responseCode = "401", description = "No autenticado")
+    @ApiResponse(responseCode = "403", description = "Solo clientes, y solo a su nombre")
+    public ResponseEntity<SolicitudResponse> register(
+            @RequestBody SolicitudRequest request, Authentication authentication) {
         if (request == null) {
             throw new SolicitudValidationException("El cuerpo de la solicitud es obligatorio.");
         }
         LOGGER.info("Solicitud de préstamo recibida.");
-        Solicitud registered = registerSolicitudUseCase.execute(request.toDomain());
+        Solicitud registered = registerSolicitudUseCase.execute(
+                request.toDomain(), (AuthenticatedUser) authentication.getPrincipal());
         LOGGER.info("Solicitud de préstamo registrada con id {}.", registered.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(SolicitudResponse.from(registered));
     }
