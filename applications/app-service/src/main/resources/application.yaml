@@ -9,6 +9,11 @@ spring:
     driver-class-name: org.h2.Driver
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
+  jpa:
+    database-platform: ${DB_DIALECT:org.hibernate.dialect.H2Dialect}
+    open-in-view: false
+    hibernate:
+      ddl-auto: ${DB_DDL_AUTO:none}
   sql:
     init:
       mode: always
