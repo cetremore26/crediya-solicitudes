@@ -4,11 +4,18 @@ CREATE TABLE IF NOT EXISTS tipos_prestamo (
 
 ALTER TABLE tipos_prestamo ADD COLUMN IF NOT EXISTS tasa_interes DECIMAL(5, 2) DEFAULT 0 NOT NULL;
 
-MERGE INTO tipos_prestamo (nombre, tasa_interes) KEY (nombre) VALUES
+MERGE INTO tipos_prestamo t
+USING (VALUES
     ('LIBRE_INVERSION', 18.00),
     ('VEHICULO', 14.00),
     ('VIVIENDA', 11.00),
-    ('EDUCACION', 9.00);
+    ('EDUCACION', 9.00)
+) AS v (nombre, tasa_interes)
+ON t.nombre = v.nombre
+WHEN MATCHED THEN
+    UPDATE SET tasa_interes = v.tasa_interes
+WHEN NOT MATCHED THEN
+    INSERT (nombre, tasa_interes) VALUES (v.nombre, v.tasa_interes);
 
 CREATE TABLE IF NOT EXISTS solicitudes (
     id UUID PRIMARY KEY,
