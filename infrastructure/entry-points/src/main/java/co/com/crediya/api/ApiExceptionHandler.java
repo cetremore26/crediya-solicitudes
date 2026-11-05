@@ -1,5 +1,6 @@
 package co.com.crediya.api;
 
+import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
@@ -29,6 +30,12 @@ public class ApiExceptionHandler {
             TipoPrestamoNoExisteException exception) {
         LOGGER.warn("Solicitud con tipo de préstamo inexistente.");
         return error(HttpStatus.BAD_REQUEST, "TIPO_PRESTAMO_INVALIDO", exception.getMessage());
+    }
+
+    @ExceptionHandler(AccesoDenegadoException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(AccesoDenegadoException exception) {
+        LOGGER.warn("Solicitud rechazada: el cliente intentó actuar en nombre de otra persona.");
+        return error(HttpStatus.FORBIDDEN, "ACCESO_DENEGADO", exception.getMessage());
     }
 
     @ExceptionHandler(ClienteNoEncontradoException.class)

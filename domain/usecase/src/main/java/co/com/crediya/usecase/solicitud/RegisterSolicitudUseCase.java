@@ -1,7 +1,10 @@
 package co.com.crediya.usecase.solicitud;
 
+import co.com.crediya.model.auth.AuthenticatedUser;
+import co.com.crediya.model.auth.Rol;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.model.solicitud.gateways.ClienteGateway;
@@ -28,10 +31,11 @@ public class RegisterSolicitudUseCase {
         this.clienteGateway = clienteGateway;
     }
 
-    public Solicitud execute(Solicitud solicitud) {
+    public Solicitud execute(Solicitud solicitud, AuthenticatedUser requester) {
         validate(solicitud);
 
         String documento = solicitud.getDocumentoIdentidad().trim();
+        ensureRequesterOwnsDocument(requester, documento);
         String tipoPrestamo = solicitud.getTipoPrestamo().trim().toUpperCase(Locale.ROOT);
 
         if (!tipoPrestamoRepository.existsByNombre(tipoPrestamo)) {
@@ -47,6 +51,14 @@ public class RegisterSolicitudUseCase {
                 .estado(EstadoSolicitud.PENDIENTE_DE_REVISION)
                 .build();
         return solicitudRepository.save(solicitudToSave);
+    }
+
+    private void ensureRequesterOwnsDocument(AuthenticatedUser requester, String documento) {
+        if (requester == null
+                || requester.rol() != Rol.CLIENTE
+                || !documento.equals(requester.documentoIdentidad())) {
+            throw new AccesoDenegadoException();
+        }
     }
 
     private void validate(Solicitud solicitud) {

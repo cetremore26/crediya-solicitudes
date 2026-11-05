@@ -4,10 +4,13 @@ import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableExcepti
 import co.com.crediya.model.solicitud.gateways.ClienteGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 public class ClienteGatewayAdapter implements ClienteGateway {
@@ -20,11 +23,22 @@ public class ClienteGatewayAdapter implements ClienteGateway {
         this.usuariosRestClient = usuariosRestClient;
     }
 
+    private String currentAuthorization() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+            String authorization = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
+            if (authorization != null) {
+                return authorization;
+            }
+        }
+        return "";
+    }
+
     @Override
     public boolean existsByDocumentoIdentidad(String documentoIdentidad) {
         try {
             return usuariosRestClient.get()
                     .uri(USUARIO_POR_DOCUMENTO_PATH, documentoIdentidad)
+                    .header(HttpHeaders.AUTHORIZATION, currentAuthorization())
                     .exchange((request, response) -> {
                         if (response.getStatusCode().isSameCodeAs(HttpStatus.NOT_FOUND)) {
                             return false;
