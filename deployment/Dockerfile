@@ -1,7 +1,28 @@
-FROM eclipse-temurin:25-jdk-alpine
-VOLUME /tmp
-COPY *.jar Solicitudes.jar
-ENV JAVA_OPTS=" -Xshareclasses:name=cacheapp,cacheDir=/cache,nonfatal -XX:+UseContainerSupport -XX:MaxRAMPercentage=70 -Djava.security.egd=file:/dev/./urandom"
-# Replace with a non-root user to avoid running the container with excessive privileges
+# syntax=docker/dockerfile:1
+
+# Build context: repository root
+#   docker build -f deployment/Dockerfile -t crediya-solicitudes .
+
+# ---------- Build stage ----------
+FROM eclipse-temurin:25-jdk AS build
+WORKDIR /workspace
+
+COPY . .
+RUN --mount=type=cache,target=/root/.gradle,sharing=locked \
+    chmod +x gradlew && \
+    ./gradlew :app-service:bootJar -x test --no-daemon --console=plain
+
+# ---------- Runtime stage ----------
+FROM eclipse-temurin:25-jre-alpine
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S -G appgroup appuser
+
+COPY --from=build --chown=appuser:appgroup /workspace/applications/app-service/build/libs/*.jar app.jar
+
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+
 USER appuser
-ENTRYPOINT [ "/bin/sh", "-c", "/opt/java/openjdk/bin/java $JAVA_OPTS  -jar /Solicitudes.jar" ]
+EXPOSE 8081
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

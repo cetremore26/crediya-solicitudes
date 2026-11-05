@@ -1,0 +1,12 @@
+.git
+.gradle
+.idea
+.vscode
+build
+build-cache
+**/build
+**/bin
+**/data
+**/*.mv.db
+**/*.trace.db
+deployment/Dockerfile
