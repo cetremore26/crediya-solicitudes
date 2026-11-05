@@ -15,6 +15,14 @@ rootProject.name = 'Solicitudes'
 include ':app-service'
 include ':model'
 include ':usecase'
+include ':entry-points'
+include ':jpa-repository'
+include ':usuarios-client'
+include ':jwt-verifier'
 project(':app-service').projectDir = file('./applications/app-service')
 project(':model').projectDir = file('./domain/model')
 project(':usecase').projectDir = file('./domain/usecase')
+project(':entry-points').projectDir = file('./infrastructure/entry-points')
+project(':jpa-repository').projectDir = file('./infrastructure/driven-adapters/jpa-repository')
+project(':usuarios-client').projectDir = file('./infrastructure/driven-adapters/usuarios-client')
+project(':jwt-verifier').projectDir = file('./infrastructure/driven-adapters/jwt-verifier')
