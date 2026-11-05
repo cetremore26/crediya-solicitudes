@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -51,6 +52,16 @@ public class ApiExceptionHandler {
         LOGGER.error("Servicio de usuarios no disponible.", exception);
         return error(
                 HttpStatus.SERVICE_UNAVAILABLE, "SERVICIO_NO_DISPONIBLE", exception.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidParameter(
+            MethodArgumentTypeMismatchException exception) {
+        LOGGER.warn("Parámetro de consulta inválido: {}", exception.getName());
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "PARAMETRO_INVALIDO",
+                "El valor del parámetro '" + exception.getName() + "' no es válido.");
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

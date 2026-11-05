@@ -2,11 +2,13 @@ CREATE TABLE IF NOT EXISTS tipos_prestamo (
     nombre VARCHAR(50) PRIMARY KEY
 );
 
-MERGE INTO tipos_prestamo (nombre) KEY (nombre) VALUES
-    ('LIBRE_INVERSION'),
-    ('VEHICULO'),
-    ('VIVIENDA'),
-    ('EDUCACION');
+ALTER TABLE tipos_prestamo ADD COLUMN IF NOT EXISTS tasa_interes DECIMAL(5, 2) DEFAULT 0 NOT NULL;
+
+MERGE INTO tipos_prestamo (nombre, tasa_interes) KEY (nombre) VALUES
+    ('LIBRE_INVERSION', 18.00),
+    ('VEHICULO', 14.00),
+    ('VIVIENDA', 11.00),
+    ('EDUCACION', 9.00);
 
 CREATE TABLE IF NOT EXISTS solicitudes (
     id UUID PRIMARY KEY,
@@ -19,3 +21,6 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     CONSTRAINT fk_solicitudes_tipo_prestamo FOREIGN KEY (tipo_prestamo)
         REFERENCES tipos_prestamo (nombre)
 );
+
+CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes (estado, fecha_creacion);
+CREATE INDEX IF NOT EXISTS idx_solicitudes_documento ON solicitudes (documento_identidad);

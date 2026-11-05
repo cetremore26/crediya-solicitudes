@@ -19,4 +19,6 @@ public class Solicitud {
     private Integer plazoMeses;
     private String tipoPrestamo;
     private EstadoSolicitud estado;
+    /** Annual interest rate (%) of the loan type; only filled when reading applications. */
+    private BigDecimal tasaInteres;
 }

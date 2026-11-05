@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
     private static final String ROLE_CLIENTE = "CLIENTE";
+    private static final String ROLE_ASESOR = "ASESOR";
     private static final String[] PUBLIC_PATHS = {
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
@@ -31,6 +32,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(PUBLIC_PATHS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/solicitud")
+                        .hasRole(ROLE_ASESOR)
                         .requestMatchers(HttpMethod.POST, "/api/v1/solicitud")
                         .hasRole(ROLE_CLIENTE)
                         .anyRequest().authenticated())
