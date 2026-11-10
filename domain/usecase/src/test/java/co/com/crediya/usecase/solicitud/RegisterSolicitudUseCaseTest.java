@@ -14,7 +14,7 @@ import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.model.solicitud.gateways.ClienteGateway;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.gateways.TipoPrestamoRepository;
-import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;

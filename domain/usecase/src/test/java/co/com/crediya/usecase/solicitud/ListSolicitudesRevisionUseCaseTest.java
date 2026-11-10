@@ -12,7 +12,7 @@ import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.gateways.DatosClienteGateway;
 import co.com.crediya.model.solicitud.gateways.SolicitudConsultaRepository;
-import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
