@@ -25,7 +25,7 @@ import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableExcepti
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.usecase.solicitud.ListSolicitudesRevisionUseCase;
 import co.com.crediya.usecase.solicitud.RegisterSolicitudUseCase;
-import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;

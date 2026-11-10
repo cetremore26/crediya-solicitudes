@@ -4,7 +4,7 @@ import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
-import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(SolicitudValidationException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(SolicitudValidationException exception) {
-        LOGGER.warn("Validación fallida al registrar solicitud: {}", exception.getMessage());
+        LOGGER.warn("Validación fallida: {}", exception.getMessage());
         return error(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", exception.getMessage());
     }
 

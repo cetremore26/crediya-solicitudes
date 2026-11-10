@@ -1,4 +1,4 @@
-package co.com.crediya.usecase.solicitud;
+package co.com.crediya.model.solicitud;
 
 import java.math.BigDecimal;
 import java.math.MathContext;

@@ -1,4 +1,4 @@
-package co.com.crediya.usecase.solicitud;
+package co.com.crediya.model.solicitud;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
