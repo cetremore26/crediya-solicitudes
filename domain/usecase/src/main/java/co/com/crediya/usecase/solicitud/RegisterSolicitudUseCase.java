@@ -1,7 +1,6 @@
 package co.com.crediya.usecase.solicitud;
 
 import co.com.crediya.model.auth.AuthenticatedUser;
-import co.com.crediya.model.auth.Rol;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
@@ -15,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Registra una solicitud de préstamo. Solo orquesta el flujo: las reglas de qué es una
- * solicitud válida viven en {@link Solicitud}.
+ * solicitud válida viven en {@link Solicitud} y las de quién puede registrarla en
+ * {@link AuthenticatedUser}.
  */
 @RequiredArgsConstructor
 public class RegisterSolicitudUseCase {
@@ -40,9 +40,7 @@ public class RegisterSolicitudUseCase {
     }
 
     private void ensureRequesterOwnsDocument(AuthenticatedUser requester, String documento) {
-        if (requester == null
-                || requester.rol() != Rol.CLIENTE
-                || !documento.equals(requester.documentoIdentidad())) {
+        if (requester == null || !requester.isClienteWithDocumento(documento)) {
             throw new AccesoDenegadoException();
         }
     }
