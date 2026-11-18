@@ -81,10 +81,11 @@ public class SolicitudController {
             @RequestParam(value = "estado", required = false) List<EstadoSolicitud> estados,
             @RequestParam(value = "tipo_prestamo", required = false) String tipoPrestamo,
             @RequestParam(value = "pagina", defaultValue = "0") int pagina,
-            @RequestParam(value = "tamano", defaultValue = "10") int tamano) {
+            @RequestParam(value = "tamano", defaultValue = "10") int tamano,
+            @AuthenticationPrincipal AuthenticatedUser solicitante) {
         LOGGER.info("Consulta de solicitudes para revisión: pagina={}, tamano={}.", pagina, tamano);
         PageResult<SolicitudRevision> page =
-                listSolicitudesRevisionUseCase.execute(estados, tipoPrestamo, pagina, tamano);
+                listSolicitudesRevisionUseCase.execute(estados, tipoPrestamo, pagina, tamano, solicitante);
         return ResponseEntity.ok(PageResponse.from(page, SolicitudRevisionResponse::from));
     }
 }

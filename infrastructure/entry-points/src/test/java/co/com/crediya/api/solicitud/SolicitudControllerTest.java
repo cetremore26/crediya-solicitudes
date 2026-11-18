@@ -118,7 +118,7 @@ class SolicitudControllerTest {
     @Test
     void returnsForbiddenWhenClientActsForAnotherPerson() throws Exception {
         when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
-                .thenThrow(new AccesoDenegadoException());
+                .thenThrow(new AccesoDenegadoException("Solo puede registrar solicitudes de préstamo a su nombre."));
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isForbidden())
@@ -190,7 +190,7 @@ class SolicitudControllerTest {
         DatosCliente cliente = new DatosCliente(
                 "1020304050", "Ana", "Pérez", "ana@example.com", new BigDecimal("4000000"));
         when(listUseCase.execute(
-                        List.of(EstadoSolicitud.REVISION_MANUAL), "VEHICULO", 1, 5))
+                        List.of(EstadoSolicitud.REVISION_MANUAL), "VEHICULO", 1, 5, CLIENTE))
                 .thenReturn(new PageResult<>(
                         List.of(new SolicitudRevision(solicitud, cliente, new BigDecimal("250000.00"))),
                         1, 5, 6));
@@ -206,6 +206,7 @@ class SolicitudControllerTest {
                 .andExpect(jsonPath("$.contenido[0].email").value("ana@example.com"))
                 .andExpect(jsonPath("$.contenido[0].nombre").value("Ana Pérez"))
                 .andExpect(jsonPath("$.contenido[0].estado_solicitud").value("Revisión manual"))
+                .andExpect(jsonPath("$.contenido[0].estado_codigo").value("REVISION_MANUAL"))
                 .andExpect(jsonPath("$.contenido[0].tasa_interes").value(14.00))
                 .andExpect(jsonPath("$.contenido[0].salario_base").value(4000000))
                 .andExpect(jsonPath("$.contenido[0].deuda_total_mensual_solicitudes_aprobadas")
@@ -223,7 +224,7 @@ class SolicitudControllerTest {
                 .estado(EstadoSolicitud.RECHAZADA)
                 .tasaInteres(new BigDecimal("14.00"))
                 .build();
-        when(listUseCase.execute(null, null, 0, 10)).thenReturn(new PageResult<>(
+        when(listUseCase.execute(null, null, 0, 10, CLIENTE)).thenReturn(new PageResult<>(
                 List.of(new SolicitudRevision(solicitud, null, BigDecimal.ZERO)), 0, 10, 1));
 
         mockMvc.perform(get(URL))
@@ -241,7 +242,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsBadRequestForInvalidPaging() throws Exception {
-        when(listUseCase.execute(null, null, 0, 500))
+        when(listUseCase.execute(null, null, 0, 500, CLIENTE))
                 .thenThrow(new SolicitudValidationException("El tamaño de página es inválido."));
 
         mockMvc.perform(get(URL).param("tamano", "500"))

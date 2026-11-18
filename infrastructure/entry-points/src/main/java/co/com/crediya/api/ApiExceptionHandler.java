@@ -36,7 +36,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(AccesoDenegadoException.class)
     public ResponseEntity<ApiErrorResponse> handleForbidden(AccesoDenegadoException exception) {
-        LOGGER.warn("Solicitud rechazada: el cliente intentó actuar en nombre de otra persona.");
+        LOGGER.warn("Operación rechazada: el usuario no tiene permiso.");
         return error(HttpStatus.FORBIDDEN, "ACCESO_DENEGADO", exception.getMessage());
     }
 

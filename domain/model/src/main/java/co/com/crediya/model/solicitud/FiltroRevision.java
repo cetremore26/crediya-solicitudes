@@ -1,6 +1,7 @@
 package co.com.crediya.model.solicitud;
 
 import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
@@ -12,10 +13,8 @@ import java.util.Set;
 public record FiltroRevision(
         Set<EstadoSolicitud> estados, String tipoPrestamo, int page, int size) {
     public static final int MAXIMUM_PAGE_SIZE = 50;
-    private static final Set<EstadoSolicitud> REVIEW_STATES = EnumSet.of(
-            EstadoSolicitud.PENDIENTE_DE_REVISION,
-            EstadoSolicitud.RECHAZADA,
-            EstadoSolicitud.REVISION_MANUAL);
+    private static final Set<EstadoSolicitud> REVIEW_STATES = EnumSet.copyOf(
+            Arrays.stream(EstadoSolicitud.values()).filter(EstadoSolicitud::esRevisable).toList());
 
     /**
      * Builds a filter: without states it uses every review state, and the loan type is

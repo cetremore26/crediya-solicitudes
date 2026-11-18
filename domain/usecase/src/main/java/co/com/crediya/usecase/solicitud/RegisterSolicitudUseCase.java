@@ -41,7 +41,7 @@ public class RegisterSolicitudUseCase {
 
     private void ensureRequesterOwnsDocument(AuthenticatedUser requester, String documento) {
         if (requester == null || !requester.isClienteWithDocumento(documento)) {
-            throw new AccesoDenegadoException();
+            throw new AccesoDenegadoException("Solo puede registrar solicitudes de préstamo a su nombre.");
         }
     }
 

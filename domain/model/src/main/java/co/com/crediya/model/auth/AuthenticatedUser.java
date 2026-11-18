@@ -9,4 +9,9 @@ public record AuthenticatedUser(
     public boolean isClienteWithDocumento(String documento) {
         return rol == Rol.CLIENTE && documento != null && documento.equals(documentoIdentidad);
     }
+
+    /** Solo un ASESOR revisa manualmente las solicitudes (HU-4). */
+    public boolean puedeRevisarSolicitudes() {
+        return rol == Rol.ASESOR;
+    }
 }

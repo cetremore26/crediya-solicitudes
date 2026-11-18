@@ -1,7 +1,8 @@
 package co.com.crediya.model.solicitud.exception;
 
+/** El usuario autenticado no tiene permiso para la operación que intenta. */
 public class AccesoDenegadoException extends RuntimeException {
-    public AccesoDenegadoException() {
-        super("Solo puede registrar solicitudes de préstamo a su nombre.");
+    public AccesoDenegadoException(String message) {
+        super(message);
     }
 }
