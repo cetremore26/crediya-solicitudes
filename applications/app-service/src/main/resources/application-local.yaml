@@ -1,0 +1,6 @@
+# Perfil solo para desarrollo local: SPRING_PROFILES_ACTIVE=local
+# Trae valores de desarrollo para lo que en application.yaml es obligatorio.
+# Nunca activar este perfil en producción.
+spring:
+  datasource:
+    password: ${DB_PASSWORD:crediya_solicitudes_pass}
