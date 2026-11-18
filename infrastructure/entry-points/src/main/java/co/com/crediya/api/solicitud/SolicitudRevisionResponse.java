@@ -16,6 +16,7 @@ public record SolicitudRevisionResponse(
         @JsonProperty("tipo_prestamo") String tipoPrestamo,
         @JsonProperty("tasa_interes") BigDecimal tasaInteres,
         @JsonProperty("estado_solicitud") String estadoSolicitud,
+        @JsonProperty("estado_codigo") String estadoCodigo,
         @JsonProperty("salario_base") BigDecimal salarioBase,
         @JsonProperty("deuda_total_mensual_solicitudes_aprobadas") BigDecimal deudaTotalMensual) {
 
@@ -31,6 +32,7 @@ public record SolicitudRevisionResponse(
                 solicitud.getTipoPrestamo(),
                 solicitud.getTasaInteres(),
                 solicitud.getEstado().getDescripcion(),
+                solicitud.getEstado().name(),
                 cliente == null ? null : cliente.salarioBase(),
                 revision.deudaMensualAprobadas());
     }

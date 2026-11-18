@@ -1,5 +1,6 @@
 package co.com.crediya.usecase.solicitud;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,6 +14,10 @@ import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.gateways.DatosClienteGateway;
 import co.com.crediya.model.solicitud.gateways.SolicitudConsultaRepository;
 import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.auth.AuthenticatedUser;
+import co.com.crediya.model.auth.Rol;
+import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
+import java.util.UUID;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,12 +48,14 @@ class ListSolicitudesRevisionUseCaseTest {
     };
     private final DatosClienteGateway clientes = documentos -> List.of(new DatosCliente(
             DOC_ANA, "Ana", "Pérez", "ana@example.com", new BigDecimal("4000000")));
+    private static final AuthenticatedUser ASESOR =
+            new AuthenticatedUser(UUID.randomUUID(), "asesor@crediya.com", Rol.ASESOR, null);
     private final ListSolicitudesRevisionUseCase useCase =
             new ListSolicitudesRevisionUseCase(repository, clientes);
 
     @Test
     void defaultsToAllReviewStatesAndNormalizesLoanType() {
-        useCase.execute(null, " vehiculo ", 0, 10);
+        useCase.execute(null, " vehiculo ", 0, 10, ASESOR);
 
         FiltroRevision filtro = receivedFilters.get(0);
         assertEquals(
@@ -60,7 +67,7 @@ class ListSolicitudesRevisionUseCaseTest {
 
     @Test
     void returnsEmptyPageWithoutCallingUsersService() {
-        PageResult<SolicitudRevision> page = useCase.execute(Set.of(), null, 0, 10);
+        PageResult<SolicitudRevision> page = useCase.execute(Set.of(), null, 0, 10, ASESOR);
 
         assertEquals(0, page.content().size());
         assertEquals(0, page.totalPages());
@@ -73,7 +80,7 @@ class ListSolicitudesRevisionUseCaseTest {
         approved.add(solicitud(DOC_ANA, EstadoSolicitud.APROBADA, "1200000", 12, "0"));
         approved.add(solicitud(DOC_ANA, EstadoSolicitud.APROBADA, "600000", 6, "0"));
 
-        PageResult<SolicitudRevision> page = useCase.execute(null, null, 0, 10);
+        PageResult<SolicitudRevision> page = useCase.execute(null, null, 0, 10, ASESOR);
 
         SolicitudRevision ana = page.content().get(0);
         assertEquals("ana@example.com", ana.cliente().correoElectronico());
@@ -85,11 +92,29 @@ class ListSolicitudesRevisionUseCaseTest {
 
     @Test
     void rejectsInvalidPagingAndStates() {
-        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, null, -1, 10));
-        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, null, 0, 0));
-        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, null, 0, 51));
+        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, null, -1, 10, ASESOR));
+        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, null, 0, 0, ASESOR));
+        assertThrows(SolicitudValidationException.class, () -> useCase.execute(null, null, 0, 51, ASESOR));
         assertThrows(SolicitudValidationException.class,
-                () -> useCase.execute(Set.of(EstadoSolicitud.APROBADA), null, 0, 10));
+                () -> useCase.execute(Set.of(EstadoSolicitud.APROBADA), null, 0, 10, ASESOR));
+    }
+
+    @Test
+    void onlyAdvisorsCanReview() {
+        for (Rol rol : List.of(Rol.ADMIN, Rol.CLIENTE)) {
+            AuthenticatedUser otro = new AuthenticatedUser(UUID.randomUUID(), "x@crediya.com", rol, null);
+            assertThrows(AccesoDenegadoException.class, () -> useCase.execute(null, null, 0, 10, otro));
+        }
+        assertThrows(AccesoDenegadoException.class, () -> useCase.execute(null, null, 0, 10, null));
+    }
+
+    @Test
+    void toleratesDuplicatedClientDataFromTheUsersService() {
+        DatosCliente ana = new DatosCliente(DOC_ANA, "Ana", "Pérez", "ana@example.com", BigDecimal.ONE);
+        ListSolicitudesRevisionUseCase withDuplicates =
+                new ListSolicitudesRevisionUseCase(repository, documentos -> List.of(ana, ana));
+
+        assertDoesNotThrow(() -> withDuplicates.execute(null, null, 0, 10, ASESOR));
     }
 
     private Solicitud solicitud(
