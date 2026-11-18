@@ -8,6 +8,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import co.com.crediya.model.solicitud.exception.ClienteServiceRejectedException;
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,15 @@ class ClienteGatewayAdapterTest {
 
         assertThrows(
                 ClienteServiceUnavailableException.class,
+                () -> adapter.existsByDocumentoIdentidad("1020304050"));
+    }
+
+    @Test
+    void throwsRejectedWhenUsersServiceRefusesTheQuery() {
+        server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.FORBIDDEN));
+
+        assertThrows(
+                ClienteServiceRejectedException.class,
                 () -> adapter.existsByDocumentoIdentidad("1020304050"));
     }
 }

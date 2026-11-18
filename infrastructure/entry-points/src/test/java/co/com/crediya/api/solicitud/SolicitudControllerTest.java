@@ -21,6 +21,7 @@ import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
+import co.com.crediya.model.solicitud.exception.ClienteServiceRejectedException;
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.usecase.solicitud.ListSolicitudesRevisionUseCase;
@@ -29,9 +30,12 @@ import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -60,7 +64,15 @@ class SolicitudControllerTest {
         listUseCase = mock(ListSolicitudesRevisionUseCase.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new SolicitudController(useCase, listUseCase))
                 .setControllerAdvice(new ApiExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(CLIENTE, null, List.of()));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -237,10 +249,18 @@ class SolicitudControllerTest {
                 .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"));
     }
 
+    @Test
+    void returnsBadGatewayWhenUsersServiceRejectsTheQuery() throws Exception {
+        when(useCase.execute(any(), any())).thenThrow(new ClienteServiceRejectedException(403));
+
+        mockMvc.perform(postJson(VALID_BODY))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.codigo").value("INTEGRACION_USUARIOS_FALLIDA"));
+    }
+
     private MockHttpServletRequestBuilder postJson(String body) {
         return post(URL)
                 .contentType("application/json")
-                .content(body)
-                .principal(new UsernamePasswordAuthenticationToken(CLIENTE, null, List.of()));
+                .content(body);
     }
 }

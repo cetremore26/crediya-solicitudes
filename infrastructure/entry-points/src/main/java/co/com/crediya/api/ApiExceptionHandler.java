@@ -2,6 +2,7 @@ package co.com.crediya.api;
 
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
+import co.com.crediya.model.solicitud.exception.ClienteServiceRejectedException;
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
@@ -52,6 +53,14 @@ public class ApiExceptionHandler {
         LOGGER.error("Servicio de usuarios no disponible.", exception);
         return error(
                 HttpStatus.SERVICE_UNAVAILABLE, "SERVICIO_NO_DISPONIBLE", exception.getMessage());
+    }
+
+    @ExceptionHandler(ClienteServiceRejectedException.class)
+    public ResponseEntity<ApiErrorResponse> handleClientServiceRejected(
+            ClienteServiceRejectedException exception) {
+        LOGGER.error("El servicio de usuarios rechazó la consulta: {}", exception.getMessage());
+        return error(HttpStatus.BAD_GATEWAY, "INTEGRACION_USUARIOS_FALLIDA",
+                "No fue posible consultar los datos del cliente. Intente más tarde.");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
