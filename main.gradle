@@ -64,7 +64,8 @@ subprojects {
         pitestVersion = '1.30.0'
         verbose = false
         outputFormats = ['XML', 'HTML']
-        threads = Runtime.runtime.availableProcessors()
+        // Pocos hilos: cada hilo es una JVM y con todos los núcleos se agota la memoria.
+        threads = 2
         exportLineCoverage = true
         useClasspathFile = true
         withHistory = true
@@ -76,8 +77,10 @@ subprojects {
         jvmArgs = ["-XX:+AllowRedefinitionToAddDeleteMethods"]
     }
 
+    // La cobertura solo necesita las pruebas. Las pruebas de mutación (PIT) son lentas y
+    // pesadas: se ejecutan aparte con `gradlew pitest`, no en cada `gradlew test`.
     jacocoTestReport {
-        dependsOn test, 'pitest'
+        dependsOn test
         reports {
             xml.setRequired true
             xml.setOutputLocation layout.buildDirectory.file("reports/jacoco.xml")
