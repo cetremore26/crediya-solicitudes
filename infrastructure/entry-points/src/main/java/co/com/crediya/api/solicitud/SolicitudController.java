@@ -9,7 +9,6 @@ import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.usecase.solicitud.ListSolicitudesRevisionUseCase;
 import co.com.crediya.usecase.solicitud.RegisterSolicitudUseCase;
-import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -58,9 +57,6 @@ public class SolicitudController {
     @ApiResponse(responseCode = "403", description = "Solo clientes, y solo a su nombre")
     public ResponseEntity<SolicitudResponse> register(
             @RequestBody SolicitudRequest request, Authentication authentication) {
-        if (request == null) {
-            throw new SolicitudValidationException("El cuerpo de la solicitud es obligatorio.");
-        }
         LOGGER.info("Solicitud de préstamo recibida.");
         Solicitud registered = registerSolicitudUseCase.execute(
                 request.toDomain(), (AuthenticatedUser) authentication.getPrincipal());

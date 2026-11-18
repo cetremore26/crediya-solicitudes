@@ -6,51 +6,37 @@ import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
+import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
 import co.com.crediya.model.solicitud.gateways.ClienteGateway;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import co.com.crediya.model.solicitud.gateways.TipoPrestamoRepository;
-import co.com.crediya.usecase.solicitud.exception.SolicitudValidationException;
-import java.math.BigDecimal;
-import java.util.Locale;
-import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
 
+/**
+ * Registra una solicitud de préstamo. Solo orquesta el flujo: las reglas de qué es una
+ * solicitud válida viven en {@link Solicitud}.
+ */
+@RequiredArgsConstructor
 public class RegisterSolicitudUseCase {
-    private static final Pattern DOCUMENTO_PATTERN = Pattern.compile("^\\d{5,15}$");
-
     private final SolicitudRepository solicitudRepository;
     private final TipoPrestamoRepository tipoPrestamoRepository;
     private final ClienteGateway clienteGateway;
 
-    public RegisterSolicitudUseCase(
-            SolicitudRepository solicitudRepository,
-            TipoPrestamoRepository tipoPrestamoRepository,
-            ClienteGateway clienteGateway) {
-        this.solicitudRepository = solicitudRepository;
-        this.tipoPrestamoRepository = tipoPrestamoRepository;
-        this.clienteGateway = clienteGateway;
-    }
-
     public Solicitud execute(Solicitud solicitud, AuthenticatedUser requester) {
-        validate(solicitud);
-
-        String documento = solicitud.getDocumentoIdentidad().trim();
-        ensureRequesterOwnsDocument(requester, documento);
-        String tipoPrestamo = solicitud.getTipoPrestamo().trim().toUpperCase(Locale.ROOT);
-
-        if (!tipoPrestamoRepository.existsByNombre(tipoPrestamo)) {
-            throw new TipoPrestamoNoExisteException();
-        }
-        if (!clienteGateway.existsByDocumentoIdentidad(documento)) {
-            throw new ClienteNoEncontradoException();
+        if (solicitud == null) {
+            throw new SolicitudValidationException("La solicitud es obligatoria.");
         }
 
-        Solicitud solicitudToSave = solicitud.toBuilder()
-                .documentoIdentidad(documento)
-                .tipoPrestamo(tipoPrestamo)
+        Solicitud candidate = solicitud.normalized();
+        candidate.validate();
+        ensureRequesterOwnsDocument(requester, candidate.getDocumentoIdentidad());
+        ensureTipoPrestamoExists(candidate.getTipoPrestamo());
+        ensureClienteExists(candidate.getDocumentoIdentidad());
+
+        return solicitudRepository.save(candidate.toBuilder()
                 .estado(EstadoSolicitud.PENDIENTE_DE_REVISION)
-                .build();
-        return solicitudRepository.save(solicitudToSave);
+                .build());
     }
 
     private void ensureRequesterOwnsDocument(AuthenticatedUser requester, String documento) {
@@ -61,26 +47,15 @@ public class RegisterSolicitudUseCase {
         }
     }
 
-    private void validate(Solicitud solicitud) {
-        if (solicitud == null) {
-            throw new SolicitudValidationException("La solicitud es obligatoria.");
+    private void ensureTipoPrestamoExists(String tipoPrestamo) {
+        if (!tipoPrestamoRepository.existsByNombre(tipoPrestamo)) {
+            throw new TipoPrestamoNoExisteException();
         }
-        String documento = solicitud.getDocumentoIdentidad();
-        if (documento == null || !DOCUMENTO_PATTERN.matcher(documento.trim()).matches()) {
-            throw new SolicitudValidationException(
-                    "El documento de identidad debe contener entre 5 y 15 dígitos.");
-        }
-        BigDecimal monto = solicitud.getMonto();
-        if (monto == null || monto.signum() <= 0) {
-            throw new SolicitudValidationException("El monto debe ser mayor a cero.");
-        }
-        Integer plazo = solicitud.getPlazoMeses();
-        if (plazo == null || plazo <= 0) {
-            throw new SolicitudValidationException("El plazo debe ser mayor a cero meses.");
-        }
-        String tipo = solicitud.getTipoPrestamo();
-        if (tipo == null || tipo.isBlank()) {
-            throw new SolicitudValidationException("El tipo de préstamo es obligatorio.");
+    }
+
+    private void ensureClienteExists(String documento) {
+        if (!clienteGateway.existsByDocumentoIdentidad(documento)) {
+            throw new ClienteNoEncontradoException();
         }
     }
 }
