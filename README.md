@@ -21,7 +21,7 @@ local activa el perfil `local` (`SPRING_PROFILES_ACTIVE=local`), que trae valore
 | `DB_URL` | no | `jdbc:postgresql://localhost:5433/crediya_solicitudes` |
 | `DB_USERNAME` | no | `crediya` |
 | `DB_DRIVER` / `DB_DIALECT` | no | `org.postgresql.Driver` / `org.hibernate.dialect.PostgreSQLDialect` |
-| `DB_DDL_AUTO` | no | `none`: el esquema y los tipos de préstamo los crea `schema.sql` al arrancar |
+| `DB_DDL_AUTO` | no | `validate`: el esquema y los tipos de préstamo los crean las migraciones de Flyway (`db/migration`) |
 
 Este servicio no tiene ninguna clave JWT: solo verifica tokens con la clave pública del servicio de autenticación.
 
