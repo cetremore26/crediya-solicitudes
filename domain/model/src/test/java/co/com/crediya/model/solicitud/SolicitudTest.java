@@ -80,4 +80,15 @@ class SolicitudTest {
                 .tipoPrestamo("LIBRE_INVERSION")
                 .build();
     }
+
+    @Test
+    void monthlyPaymentRequiresTheInterestRate() {
+        Solicitud sinTasa = Solicitud.builder()
+                .monto(new BigDecimal("1000000"))
+                .plazoMeses(12)
+                .tipoPrestamo("VEHICULO")
+                .build();
+
+        assertThrows(IllegalStateException.class, sinTasa::cuotaMensual);
+    }
 }

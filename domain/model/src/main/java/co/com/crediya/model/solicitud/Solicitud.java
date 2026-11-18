@@ -8,15 +8,14 @@ import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Solicitud de préstamo. Además de los datos, conoce sus propias reglas:
  * cómo se normaliza ({@link #normalized()}), cuándo es válida ({@link #validate()})
  * y cuál es su cuota mensual ({@link #cuotaMensual()}).
+ * Es inmutable: los cambios se hacen con {@code toBuilder()}.
  */
 @Getter
-@Setter
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class Solicitud {
@@ -64,8 +63,16 @@ public class Solicitud {
         }
     }
 
-    /** Cuota mensual de la solicitud según la tasa de interés de su tipo de préstamo. */
+    /**
+     * Cuota mensual de la solicitud según la tasa de interés de su tipo de préstamo.
+     *
+     * @throws IllegalStateException si la solicitud no trae la tasa (solo se llena al leerla)
+     */
     public BigDecimal cuotaMensual() {
+        if (tasaInteres == null) {
+            throw new IllegalStateException(
+                    "La solicitud " + id + " no tiene la tasa de interés de su tipo de préstamo.");
+        }
         return CuotaMensualCalculator.calculate(monto, plazoMeses, tasaInteres);
     }
 

@@ -10,15 +10,20 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 @Entity
 @Table(name = "solicitudes")
@@ -27,7 +32,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SolicitudEntity {
+/**
+ * Implementa {@link Persistable}: el id lo asigna la aplicación, así que sin esto Spring Data
+ * no sabría que la entidad es nueva y haría un SELECT (merge) antes de cada INSERT.
+ */
+public class SolicitudEntity implements Persistable<UUID> {
     @Id
     @Column(name = "id")
     private UUID id;
@@ -57,4 +66,21 @@ public class SolicitudEntity {
     /** Filled by the database default on insert. */
     @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime fechaCreacion;
+
+    @Transient
+    @Builder.Default
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private boolean nueva = true;
+
+    @Override
+    public boolean isNew() {
+        return nueva;
+    }
+
+    @PostLoad
+    @PostPersist
+    void marcarComoPersistida() {
+        nueva = false;
+    }
 }

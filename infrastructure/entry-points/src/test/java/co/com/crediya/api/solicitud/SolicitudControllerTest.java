@@ -77,6 +77,7 @@ class SolicitudControllerTest {
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.estado").value("Pendiente de revisión"))
+                .andExpect(jsonPath("$.estado_codigo").value("PENDIENTE_DE_REVISION"))
                 .andExpect(jsonPath("$.tipo_prestamo").value("LIBRE_INVERSION"))
                 .andExpect(jsonPath("$.documento_identidad").value("1020304050"));
 
@@ -113,11 +114,11 @@ class SolicitudControllerTest {
     }
 
     @Test
-    void returnsNotFoundForUnknownClient() throws Exception {
+    void returnsUnprocessableContentForUnknownClient() throws Exception {
         when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new ClienteNoEncontradoException());
 
         mockMvc.perform(postJson(VALID_BODY))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.codigo").value("CLIENTE_NO_ENCONTRADO"));
     }
 

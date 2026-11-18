@@ -43,7 +43,7 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleUnknownClient(
             ClienteNoEncontradoException exception) {
         LOGGER.warn("Solicitud con documento de cliente inexistente.");
-        return error(HttpStatus.NOT_FOUND, "CLIENTE_NO_ENCONTRADO", exception.getMessage());
+        return error(HttpStatus.UNPROCESSABLE_CONTENT, "CLIENTE_NO_ENCONTRADO", exception.getMessage());
     }
 
     @ExceptionHandler(ClienteServiceUnavailableException.class)

@@ -11,7 +11,8 @@ public record SolicitudResponse(
         BigDecimal monto,
         @JsonProperty("plazo_meses") Integer plazoMeses,
         @JsonProperty("tipo_prestamo") String tipoPrestamo,
-        String estado) {
+        String estado,
+        @JsonProperty("estado_codigo") String estadoCodigo) {
 
     public static SolicitudResponse from(Solicitud solicitud) {
         return new SolicitudResponse(
@@ -20,6 +21,7 @@ public record SolicitudResponse(
                 solicitud.getMonto(),
                 solicitud.getPlazoMeses(),
                 solicitud.getTipoPrestamo(),
-                solicitud.getEstado().getDescripcion());
+                solicitud.getEstado().getDescripcion(),
+                solicitud.getEstado().name());
     }
 }
