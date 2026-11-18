@@ -2,16 +2,18 @@ package co.com.crediya.client.usuario;
 
 import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
 import co.com.crediya.model.solicitud.gateways.ClienteGateway;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+/**
+ * Verifica en el servicio de usuarios si existe un cliente. 404 significa que no existe;
+ * los demás errores se traducen con {@link UsuariosServiceErrors}. El registro del error lo
+ * hace quien atiende la excepción, no este adaptador.
+ */
 @Component
 public class ClienteGatewayAdapter implements ClienteGateway {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClienteGatewayAdapter.class);
     private static final String USUARIO_POR_DOCUMENTO_PATH = "/api/v1/usuarios/documento/{documento}";
 
     private final RestClient usuariosRestClient;
@@ -32,12 +34,9 @@ public class ClienteGatewayAdapter implements ClienteGateway {
                         if (response.getStatusCode().is2xxSuccessful()) {
                             return true;
                         }
-                        throw new IllegalStateException(
-                                "Respuesta inesperada del servicio de usuarios: "
-                                        + response.getStatusCode());
+                        throw UsuariosServiceErrors.fromStatus(response.getStatusCode());
                     });
-        } catch (RestClientException | IllegalStateException exception) {
-            LOGGER.error("Fallo al consultar el servicio de usuarios.", exception);
+        } catch (RestClientException exception) {
             throw new ClienteServiceUnavailableException(exception);
         }
     }

@@ -21,7 +21,7 @@ class AuthorizationPropagationInterceptor implements ClientHttpRequestIntercepto
             HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
             throws IOException {
         String authorization = currentAuthorization();
-        if (authorization != null) {
+        if (authorization != null && !authorization.isBlank()) {
             request.getHeaders().set(HttpHeaders.AUTHORIZATION, authorization);
         }
         return execution.execute(request, body);

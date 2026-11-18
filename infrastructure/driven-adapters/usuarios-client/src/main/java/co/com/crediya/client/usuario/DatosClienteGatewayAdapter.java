@@ -8,8 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,7 +15,6 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 public class DatosClienteGatewayAdapter implements DatosClienteGateway {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DatosClienteGatewayAdapter.class);
     private static final String USUARIOS_PATH = "/api/v1/usuarios";
 
     private final RestClient usuariosRestClient;
@@ -35,16 +32,17 @@ public class DatosClienteGatewayAdapter implements DatosClienteGateway {
                             .queryParam("documentos", String.join(",", documentos))
                             .build())
                     .retrieve()
+                    .onStatus(status -> status.isError(), (request, response) -> {
+                        throw UsuariosServiceErrors.fromStatus(response.getStatusCode());
+                    })
                     .body(new ParameterizedTypeReference<List<UsuarioPayload>>() { });
             return usuarios == null
                     ? List.of()
                     : usuarios.stream().map(UsuarioPayload::toDomain).toList();
         } catch (RestClientException exception) {
-            LOGGER.error("Fallo al consultar los datos de clientes en el servicio de usuarios.", exception);
             throw new ClienteServiceUnavailableException(exception);
         }
     }
-
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UsuarioPayload(

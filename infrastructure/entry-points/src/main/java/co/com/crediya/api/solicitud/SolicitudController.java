@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,15 +51,17 @@ public class SolicitudController {
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "422", description = "El cliente no existe",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    @ApiResponse(responseCode = "502", description = "El servicio de usuarios rechazó la consulta",
+            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "503", description = "No fue posible verificar al cliente",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Solo clientes, y solo a su nombre")
     public ResponseEntity<SolicitudResponse> register(
-            @RequestBody SolicitudRequest request, Authentication authentication) {
+            @RequestBody SolicitudRequest request,
+            @AuthenticationPrincipal AuthenticatedUser solicitante) {
         LOGGER.info("Solicitud de préstamo recibida.");
-        Solicitud registered = registerSolicitudUseCase.execute(
-                request.toDomain(), (AuthenticatedUser) authentication.getPrincipal());
+        Solicitud registered = registerSolicitudUseCase.execute(request.toDomain(), solicitante);
         LOGGER.info("Solicitud de préstamo registrada con id {}.", registered.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(SolicitudResponse.from(registered));
     }
