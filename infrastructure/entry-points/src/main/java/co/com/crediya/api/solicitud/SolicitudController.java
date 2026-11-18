@@ -49,7 +49,7 @@ public class SolicitudController {
     @ApiResponse(responseCode = "201", description = "Solicitud registrada exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos inválidos o tipo de préstamo inexistente",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "El cliente no existe",
+    @ApiResponse(responseCode = "422", description = "El cliente no existe",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     @ApiResponse(responseCode = "503", description = "No fue posible verificar al cliente",
             content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
