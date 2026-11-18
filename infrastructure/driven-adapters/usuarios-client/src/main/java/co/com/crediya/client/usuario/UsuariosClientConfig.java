@@ -19,6 +19,7 @@ public class UsuariosClientConfig {
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
+                .requestInterceptor(new AuthorizationPropagationInterceptor())
                 .build();
     }
 }

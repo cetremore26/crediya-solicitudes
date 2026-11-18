@@ -11,12 +11,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 public class DatosClienteGatewayAdapter implements DatosClienteGateway {
@@ -37,7 +34,6 @@ public class DatosClienteGatewayAdapter implements DatosClienteGateway {
                             .path(USUARIOS_PATH)
                             .queryParam("documentos", String.join(",", documentos))
                             .build())
-                    .header(HttpHeaders.AUTHORIZATION, currentAuthorization())
                     .retrieve()
                     .body(new ParameterizedTypeReference<List<UsuarioPayload>>() { });
             return usuarios == null
@@ -49,15 +45,6 @@ public class DatosClienteGatewayAdapter implements DatosClienteGateway {
         }
     }
 
-    private String currentAuthorization() {
-        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
-            String authorization = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
-            if (authorization != null) {
-                return authorization;
-            }
-        }
-        return "";
-    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record UsuarioPayload(
