@@ -6,7 +6,6 @@ import co.com.crediya.model.solicitud.SolicitudRevision;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 public record SolicitudRevisionResponse(
         UUID id,
@@ -28,18 +27,11 @@ public record SolicitudRevisionResponse(
                 solicitud.getMonto(),
                 solicitud.getPlazoMeses(),
                 cliente == null ? null : cliente.correoElectronico(),
-                cliente == null ? null : fullName(cliente),
+                cliente == null ? null : cliente.nombreCompleto(),
                 solicitud.getTipoPrestamo(),
                 solicitud.getTasaInteres(),
                 solicitud.getEstado().getDescripcion(),
                 cliente == null ? null : cliente.salarioBase(),
                 revision.deudaMensualAprobadas());
-    }
-
-    private static String fullName(DatosCliente cliente) {
-        return Stream.of(cliente.nombres(), cliente.apellidos())
-                .filter(part -> part != null && !part.isBlank())
-                .reduce((names, lastNames) -> names + " " + lastNames)
-                .orElse(null);
     }
 }

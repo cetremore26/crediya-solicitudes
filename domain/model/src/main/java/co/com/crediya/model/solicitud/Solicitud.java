@@ -12,7 +12,8 @@ import lombok.Setter;
 
 /**
  * Solicitud de préstamo. Además de los datos, conoce sus propias reglas:
- * cómo se normaliza ({@link #normalized()}) y cuándo es válida ({@link #validate()}).
+ * cómo se normaliza ({@link #normalized()}), cuándo es válida ({@link #validate()})
+ * y cuál es su cuota mensual ({@link #cuotaMensual()}).
  */
 @Getter
 @Setter
@@ -61,6 +62,11 @@ public class Solicitud {
         if (tipoPrestamo == null) {
             throw new SolicitudValidationException("El tipo de préstamo es obligatorio.");
         }
+    }
+
+    /** Cuota mensual de la solicitud según la tasa de interés de su tipo de préstamo. */
+    public BigDecimal cuotaMensual() {
+        return CuotaMensualCalculator.calculate(monto, plazoMeses, tasaInteres);
     }
 
     /** Tipo de préstamo sin espacios y en mayúsculas, o {@code null} si viene vacío. */

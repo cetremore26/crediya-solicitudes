@@ -61,6 +61,17 @@ class SolicitudTest {
                 SolicitudValidationException.class, () -> solicitud.normalized().validate()));
     }
 
+    @Test
+    void calculatesMonthlyPaymentWithItsInterestRate() {
+        Solicitud solicitud = validSolicitud().toBuilder()
+                .monto(new BigDecimal("1200000"))
+                .plazoMeses(12)
+                .tasaInteres(BigDecimal.ZERO)
+                .build();
+
+        assertEquals(new BigDecimal("100000.00"), solicitud.cuotaMensual());
+    }
+
     private Solicitud validSolicitud() {
         return Solicitud.builder()
                 .documentoIdentidad("1020304050")
