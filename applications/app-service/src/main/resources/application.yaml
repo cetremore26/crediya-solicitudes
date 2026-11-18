@@ -23,4 +23,5 @@ usuarios:
   service:
     url: ${USUARIOS_SERVICE_URL:http://localhost:8080}
 jwt:
-  secret: ${JWT_SECRET:dev-only-secret-change-me-in-production-0123456789}
+  # Claves públicas (JWKS) del servicio de autenticación para verificar los tokens RS256.
+  jwks-uri: ${JWT_JWKS_URI:${usuarios.service.url}/.well-known/jwks.json}
