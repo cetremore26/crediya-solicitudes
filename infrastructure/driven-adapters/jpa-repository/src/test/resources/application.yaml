@@ -7,6 +7,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     open-in-view: false
-  sql:
-    init:
-      mode: always
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    locations: classpath:db/migration

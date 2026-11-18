@@ -14,10 +14,13 @@ spring:
     database-platform: ${DB_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
     open-in-view: false
     hibernate:
-      ddl-auto: ${DB_DDL_AUTO:none}
-  sql:
-    init:
-      mode: always
+      # Hibernate solo valida que las entidades coincidan con el esquema de Flyway.
+      ddl-auto: ${DB_DDL_AUTO:validate}
+  flyway:
+    locations: classpath:db/migration
+    # Bases creadas antes de Flyway (con schema.sql) se registran en la versión 1.
+    baseline-on-migrate: true
+    baseline-version: 1
   devtools:
     add-properties: false
 usuarios:
