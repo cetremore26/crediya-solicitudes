@@ -29,3 +29,13 @@ usuarios:
 jwt:
   # Claves públicas (JWKS) del servicio de autenticación para verificar los tokens RS256.
   jwks-uri: ${JWT_JWKS_URI:${usuarios.service.url}/.well-known/jwks.json}
+management:
+  # Solo se publica el estado de salud (lo usan Docker y docker-compose).
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

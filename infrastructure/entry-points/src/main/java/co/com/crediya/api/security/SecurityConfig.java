@@ -19,6 +19,7 @@ public class SecurityConfig {
     private static final String ROLE_CLIENTE = "CLIENTE";
     private static final String ROLE_ASESOR = "ASESOR";
     private static final String[] PUBLIC_PATHS = {
+            "/actuator/health", "/actuator/health/**",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
