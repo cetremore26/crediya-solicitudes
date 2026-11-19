@@ -1,5 +1,6 @@
 package co.com.crediya.security;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -98,7 +99,7 @@ class VerificadorTokensJwtTest {
 
     @Test
     void reportsUnavailableKeysWhenTheJwksEndpointDoesNotRespond() throws Exception {
-        VerificadorTokensJwt sinServicio = new VerificadorTokensJwt("http://127.0.0.1:1/.well-known/jwks.json");
+        VerificadorTokensJwt sinServicio = new VerificadorTokensJwt("http://127.0.0.1:1/.well-known/jwks.json", true);
         String token = sign(AUTH_KEY, claims());
 
         assertThrows(VerificacionTokensNoDisponibleException.class, () -> sinServicio.verificar(token));
@@ -106,7 +107,17 @@ class VerificadorTokensJwtTest {
 
     @Test
     void rejectsAnInvalidJwksUri() {
-        assertThrows(IllegalStateException.class, () -> new VerificadorTokensJwt("no es una url"));
+        assertThrows(IllegalStateException.class, () -> new VerificadorTokensJwt("no es una url", true));
+        assertThrows(IllegalStateException.class,
+                () -> new VerificadorTokensJwt("ftp://auth/.well-known/jwks.json", true));
+    }
+
+    @Test
+    void requiresHttpsUnlessPlainHttpIsExplicitlyAllowed() {
+        assertThrows(IllegalStateException.class,
+                () -> new VerificadorTokensJwt("http://auth:8080/.well-known/jwks.json", false));
+        assertDoesNotThrow(() -> new VerificadorTokensJwt("https://auth/.well-known/jwks.json", false));
+        assertDoesNotThrow(() -> new VerificadorTokensJwt("http://auth:8080/.well-known/jwks.json", true));
     }
 
     private static String sign(RSAKey key, JWTClaimsSet.Builder claims) throws Exception {

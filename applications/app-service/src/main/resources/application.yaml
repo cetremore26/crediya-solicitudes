@@ -29,6 +29,15 @@ usuarios:
 jwt:
   # Claves públicas (JWKS) del servicio de autenticación para verificar los tokens RS256.
   jwks-uri: ${JWT_JWKS_URI:${usuarios.service.url}/.well-known/jwks.json}
+  # Con HTTP plano, quien intercepte la descarga podría colar su propia clave y falsificar
+  # tokens. Solo se permite en desarrollo o dentro de una red privada de confianza.
+  allow-insecure-jwks-uri: ${JWT_ALLOW_INSECURE_JWKS_URI:false}
+springdoc:
+  # La documentación OpenAPI solo se publica si se pide (el perfil local la activa).
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
 management:
   # Solo se publica el estado de salud (lo usan Docker y docker-compose).
   endpoints:
