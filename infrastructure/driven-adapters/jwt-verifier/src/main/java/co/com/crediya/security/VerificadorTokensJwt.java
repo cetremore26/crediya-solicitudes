@@ -3,9 +3,11 @@ package co.com.crediya.security;
 import co.com.crediya.model.autenticacion.UsuarioAutenticado;
 import co.com.crediya.model.autenticacion.Rol;
 import co.com.crediya.model.autenticacion.exception.TokenInvalidoException;
+import co.com.crediya.model.autenticacion.exception.VerificacionTokensNoDisponibleException;
 import co.com.crediya.model.autenticacion.gateways.VerificadorTokens;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.KeySourceException;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.BadJOSEException;
@@ -70,6 +72,10 @@ public class VerificadorTokensJwt implements VerificadorTokens {
                     claims.getStringClaim(CLAIM_CORREO),
                     Rol.valueOf(claims.getStringClaim(CLAIM_ROL)),
                     claims.getStringClaim(CLAIM_DOCUMENTO));
+        } catch (KeySourceException exception) {
+            LOGGER.error("No se pudieron obtener las claves públicas de verificación.", exception);
+            throw new VerificacionTokensNoDisponibleException(
+                    "No se pueden verificar tokens en este momento.", exception);
         } catch (ParseException | BadJOSEException | JOSEException | IllegalArgumentException exception) {
             LOGGER.warn("Token rechazado: {}", exception.getClass().getSimpleName());
             throw new TokenInvalidoException("Token inválido.", exception);

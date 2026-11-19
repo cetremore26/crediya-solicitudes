@@ -13,7 +13,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Respuestas JSON de seguridad (401/403) con el mismo formato que {@link ErrorApiResponse}.
+ * Respuestas JSON de seguridad (401/403/503) con el mismo formato que {@link ErrorApiResponse}.
  * Se serializan con Jackson para que el cuerpo siempre sea JSON válido.
  */
 public final class RespuestasErrorSeguridad {
@@ -37,6 +37,12 @@ public final class RespuestasErrorSeguridad {
             escribir(response, HttpStatus.FORBIDDEN, "ACCESO_DENEGADO",
                     "No tiene permisos para realizar esta acción.");
         };
+    }
+
+    /** El token no se pudo comprobar porque las claves de verificación no están disponibles. */
+    public static void verificacionNoDisponible(HttpServletResponse response) throws IOException {
+        escribir(response, HttpStatus.SERVICE_UNAVAILABLE, "AUTENTICACION_NO_DISPONIBLE",
+                "No se puede verificar la sesión en este momento. Intente más tarde.");
     }
 
     private static void escribir(
