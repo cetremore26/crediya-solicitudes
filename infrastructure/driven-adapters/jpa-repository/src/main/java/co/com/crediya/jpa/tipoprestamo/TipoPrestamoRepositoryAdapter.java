@@ -12,7 +12,7 @@ public class TipoPrestamoRepositoryAdapter implements TipoPrestamoRepository {
     }
 
     @Override
-    public boolean existsByNombre(String nombre) {
+    public boolean existePorNombre(String nombre) {
         return repository.existsById(nombre);
     }
 }

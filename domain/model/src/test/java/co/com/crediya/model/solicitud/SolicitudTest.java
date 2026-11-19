@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.solicitud.exception.SolicitudInvalidaException;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ class SolicitudTest {
                 .documentoIdentidad(" 1020304050 ")
                 .tipoPrestamo(" libre_inversion ")
                 .build()
-                .normalized();
+                .normalizado();
 
         assertEquals("1020304050", solicitud.getDocumentoIdentidad());
         assertEquals("LIBRE_INVERSION", solicitud.getTipoPrestamo());
@@ -27,21 +27,21 @@ class SolicitudTest {
     @Test
     void normalizesBlankLoanTypeToNull() {
         assertNull(validSolicitud().toBuilder().tipoPrestamo("  ").build()
-                .normalized().getTipoPrestamo());
+                .normalizado().getTipoPrestamo());
     }
 
     @Test
     void normalizedDoesNotModifyOriginal() {
         Solicitud original = validSolicitud().toBuilder().tipoPrestamo(" vehiculo ").build();
 
-        original.normalized();
+        original.normalizado();
 
         assertEquals(" vehiculo ", original.getTipoPrestamo());
     }
 
     @Test
     void acceptsValidSolicitud() {
-        assertDoesNotThrow(() -> validSolicitud().normalized().validate());
+        assertDoesNotThrow(() -> validSolicitud().normalizado().validar());
     }
 
     @Test
@@ -58,7 +58,7 @@ class SolicitudTest {
                 validSolicitud().toBuilder().tipoPrestamo(" ").build());
 
         invalid.forEach(solicitud -> assertThrows(
-                SolicitudValidationException.class, () -> solicitud.normalized().validate()));
+                SolicitudInvalidaException.class, () -> solicitud.normalizado().validar()));
     }
 
     @Test

@@ -1,7 +1,7 @@
 package co.com.crediya.client.usuario;
 
 import co.com.crediya.model.solicitud.DatosCliente;
-import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosNoDisponibleException;
 import co.com.crediya.model.solicitud.gateways.DatosClienteGateway;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,7 +15,7 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 public class DatosClienteGatewayAdapter implements DatosClienteGateway {
-    private static final String USUARIOS_PATH = "/api/v1/usuarios";
+    private static final String RUTA_USUARIOS = "/api/v1/usuarios";
 
     private final RestClient usuariosRestClient;
 
@@ -24,35 +24,35 @@ public class DatosClienteGatewayAdapter implements DatosClienteGateway {
     }
 
     @Override
-    public List<DatosCliente> findByDocumentos(Collection<String> documentos) {
+    public List<DatosCliente> buscarPorDocumentos(Collection<String> documentos) {
         try {
-            List<UsuarioPayload> usuarios = usuariosRestClient.get()
+            List<UsuarioRecibido> usuarios = usuariosRestClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path(USUARIOS_PATH)
+                            .path(RUTA_USUARIOS)
                             .queryParam("documentos", String.join(",", documentos))
                             .build())
                     .retrieve()
                     .onStatus(status -> status.isError(), (request, response) -> {
-                        throw UsuariosServiceErrors.fromStatus(response.getStatusCode());
+                        throw ErroresServicioUsuarios.desdeEstado(response.getStatusCode());
                     })
-                    .body(new ParameterizedTypeReference<List<UsuarioPayload>>() { });
+                    .body(new ParameterizedTypeReference<List<UsuarioRecibido>>() { });
             return usuarios == null
                     ? List.of()
-                    : usuarios.stream().map(UsuarioPayload::toDomain).toList();
+                    : usuarios.stream().map(UsuarioRecibido::aDominio).toList();
         } catch (RestClientException exception) {
-            throw new ClienteServiceUnavailableException(exception);
+            throw new ServicioUsuariosNoDisponibleException(exception);
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record UsuarioPayload(
+    record UsuarioRecibido(
             @JsonProperty("documento_identidad") String documentoIdentidad,
             String nombres,
             String apellidos,
             @JsonProperty("correo_electronico") String correoElectronico,
             @JsonProperty("salario_base") BigDecimal salarioBase) {
 
-        DatosCliente toDomain() {
+        DatosCliente aDominio() {
             return new DatosCliente(
                     documentoIdentidad, nombres, apellidos, correoElectronico, salarioBase);
         }

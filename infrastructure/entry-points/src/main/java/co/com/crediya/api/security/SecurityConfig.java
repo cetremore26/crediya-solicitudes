@@ -1,6 +1,6 @@
 package co.com.crediya.api.security;
 
-import co.com.crediya.model.auth.gateways.TokenVerifier;
+import co.com.crediya.model.autenticacion.gateways.VerificadorTokens;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,15 +16,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private static final String ROLE_CLIENTE = "CLIENTE";
-    private static final String ROLE_ASESOR = "ASESOR";
-    private static final String[] PUBLIC_PATHS = {
+    private static final String ROL_CLIENTE = "CLIENTE";
+    private static final String ROL_ASESOR = "ASESOR";
+    private static final String[] RUTAS_PUBLICAS = {
             "/actuator/health", "/actuator/health/**",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, TokenVerifier tokenVerifier)
+    SecurityFilterChain securityFilterChain(HttpSecurity http, VerificadorTokens verificadorTokens)
             throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -32,22 +32,22 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers(PUBLIC_PATHS).permitAll()
+                        .requestMatchers(RUTAS_PUBLICAS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/solicitud")
-                        .hasRole(ROLE_ASESOR)
+                        .hasRole(ROL_ASESOR)
                         .requestMatchers(HttpMethod.POST, "/api/v1/solicitud")
-                        .hasRole(ROLE_CLIENTE)
+                        .hasRole(ROL_CLIENTE)
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(SecurityErrorHandlers.unauthorized())
-                        .accessDeniedHandler(SecurityErrorHandlers.forbidden()))
+                        .authenticationEntryPoint(RespuestasErrorSeguridad.noAutenticado())
+                        .accessDeniedHandler(RespuestasErrorSeguridad.accesoDenegado()))
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(tokenVerifier),
+                        new FiltroAutenticacionJwt(verificadorTokens),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    /** Disables Spring Boot's default in-memory user: authentication is done by JWT only. */
+    /** Desactiva el usuario en memoria por defecto de Spring Boot: solo se autentica con JWT. */
     @Bean
     UserDetailsService userDetailsService() {
         return username -> {

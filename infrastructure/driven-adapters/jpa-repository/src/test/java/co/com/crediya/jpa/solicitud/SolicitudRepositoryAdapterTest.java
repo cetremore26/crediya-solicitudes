@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.com.crediya.jpa.JpaTestApplication;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.FiltroRevision;
-import co.com.crediya.model.solicitud.PageResult;
+import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
 import java.math.BigDecimal;
 import java.util.List;
@@ -53,7 +53,7 @@ class SolicitudRepositoryAdapterTest {
     void keepsProvidedId() {
         UUID id = UUID.randomUUID();
 
-        Solicitud saved = adapter.save(solicitud("1020304050", "VEHICULO",
+        Solicitud saved = adapter.guardar(solicitud("1020304050", "VEHICULO",
                 EstadoSolicitud.PENDIENTE_DE_REVISION).toBuilder().id(id).build());
 
         assertEquals(id, saved.getId());
@@ -63,7 +63,7 @@ class SolicitudRepositoryAdapterTest {
     void rejectsSolicitudWithUnknownLoanType() {
         Solicitud solicitud = solicitud("1020304050", "INEXISTENTE", EstadoSolicitud.PENDIENTE_DE_REVISION);
 
-        assertThrows(DataIntegrityViolationException.class, () -> adapter.save(solicitud));
+        assertThrows(DataIntegrityViolationException.class, () -> adapter.guardar(solicitud));
     }
 
     @Test
@@ -72,12 +72,12 @@ class SolicitudRepositoryAdapterTest {
         save("222222", "VIVIENDA", EstadoSolicitud.REVISION_MANUAL);
         save("333333", "VEHICULO", EstadoSolicitud.APROBADA);
 
-        PageResult<Solicitud> page =
-                adapter.findForReview(new FiltroRevision(ALL_REVIEW_STATES, null, 0, 10));
+        Pagina<Solicitud> page =
+                adapter.buscarParaRevision(new FiltroRevision(ALL_REVIEW_STATES, null, 0, 10));
 
-        assertEquals(2, page.totalElements());
-        assertEquals("111111", page.content().get(0).getDocumentoIdentidad());
-        assertEquals(0, new BigDecimal("14.00").compareTo(page.content().get(0).getTasaInteres()));
+        assertEquals(2, page.totalElementos());
+        assertEquals("111111", page.contenido().get(0).getDocumentoIdentidad());
+        assertEquals(0, new BigDecimal("14.00").compareTo(page.contenido().get(0).getTasaInteres()));
     }
 
     @Test
@@ -86,14 +86,14 @@ class SolicitudRepositoryAdapterTest {
         save("222222", "VIVIENDA", EstadoSolicitud.PENDIENTE_DE_REVISION);
         save("333333", "VIVIENDA", EstadoSolicitud.RECHAZADA);
 
-        PageResult<Solicitud> byType = adapter.findForReview(
+        Pagina<Solicitud> byType = adapter.buscarParaRevision(
                 new FiltroRevision(ALL_REVIEW_STATES, "VIVIENDA", 0, 10));
-        PageResult<Solicitud> byState = adapter.findForReview(
+        Pagina<Solicitud> byState = adapter.buscarParaRevision(
                 new FiltroRevision(Set.of(EstadoSolicitud.RECHAZADA), null, 0, 10));
 
-        assertEquals(2, byType.totalElements());
-        assertEquals(1, byState.totalElements());
-        assertEquals("333333", byState.content().get(0).getDocumentoIdentidad());
+        assertEquals(2, byType.totalElementos());
+        assertEquals(1, byState.totalElementos());
+        assertEquals("333333", byState.contenido().get(0).getDocumentoIdentidad());
     }
 
     @Test
@@ -102,12 +102,12 @@ class SolicitudRepositoryAdapterTest {
             save("10000" + i, "VEHICULO", EstadoSolicitud.PENDIENTE_DE_REVISION);
         }
 
-        PageResult<Solicitud> secondPage =
-                adapter.findForReview(new FiltroRevision(ALL_REVIEW_STATES, null, 1, 2));
+        Pagina<Solicitud> secondPage =
+                adapter.buscarParaRevision(new FiltroRevision(ALL_REVIEW_STATES, null, 1, 2));
 
-        assertEquals(5, secondPage.totalElements());
-        assertEquals(3, secondPage.totalPages());
-        assertEquals(2, secondPage.content().size());
+        assertEquals(5, secondPage.totalElementos());
+        assertEquals(3, secondPage.totalPaginas());
+        assertEquals(2, secondPage.contenido().size());
     }
 
     @Test
@@ -116,15 +116,15 @@ class SolicitudRepositoryAdapterTest {
         save("111111", "VEHICULO", EstadoSolicitud.RECHAZADA);
         save("222222", "VEHICULO", EstadoSolicitud.APROBADA);
 
-        List<Solicitud> approved = adapter.findApprovedByDocumentos(List.of("111111"));
+        List<Solicitud> approved = adapter.buscarAprobadasPorDocumentos(List.of("111111"));
 
         assertEquals(1, approved.size());
         assertTrue(approved.get(0).getTasaInteres().signum() > 0);
-        assertTrue(adapter.findApprovedByDocumentos(List.of()).isEmpty());
+        assertTrue(adapter.buscarAprobadasPorDocumentos(List.of()).isEmpty());
     }
 
     private Solicitud save(String documento, String tipo, EstadoSolicitud estado) {
-        return adapter.save(solicitud(documento, tipo, estado));
+        return adapter.guardar(solicitud(documento, tipo, estado));
     }
 
     private Solicitud solicitud(String documento, String tipo, EstadoSolicitud estado) {

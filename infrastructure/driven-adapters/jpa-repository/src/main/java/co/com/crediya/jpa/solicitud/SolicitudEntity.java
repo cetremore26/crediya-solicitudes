@@ -53,7 +53,7 @@ public class SolicitudEntity implements Persistable<UUID> {
     @Column(name = "tipo_prestamo", nullable = false, length = 50)
     private String tipoPrestamo;
 
-    /** Read-only view of the loan type, used to expose its interest rate. */
+    /** Vista de solo lectura del tipo de préstamo, para exponer su tasa de interés. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tipo_prestamo", referencedColumnName = "nombre",
             insertable = false, updatable = false)
@@ -63,7 +63,7 @@ public class SolicitudEntity implements Persistable<UUID> {
     @Column(name = "estado", nullable = false, length = 40)
     private EstadoSolicitud estado;
 
-    /** Filled by the database default on insert. */
+    /** Lo llena el valor por defecto de la base de datos al insertar. */
     @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 

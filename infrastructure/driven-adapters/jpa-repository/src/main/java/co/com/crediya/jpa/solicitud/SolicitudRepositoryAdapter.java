@@ -3,7 +3,7 @@ package co.com.crediya.jpa.solicitud;
 import co.com.crediya.jpa.helper.AdapterOperations;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.FiltroRevision;
-import co.com.crediya.model.solicitud.PageResult;
+import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.gateways.SolicitudConsultaRepository;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
@@ -24,14 +24,14 @@ public class SolicitudRepositoryAdapter
         extends AdapterOperations<Solicitud, SolicitudEntity, UUID, SolicitudDataRepository>
         implements SolicitudRepository, SolicitudConsultaRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(SolicitudRepositoryAdapter.class);
-    private static final Sort OLDEST_FIRST = Sort.by("fechaCreacion", "id");
+    private static final Sort MAS_ANTIGUAS_PRIMERO = Sort.by("fechaCreacion", "id");
 
     public SolicitudRepositoryAdapter(SolicitudDataRepository repository, ObjectMapper mapper) {
-        super(repository, mapper, SolicitudRepositoryAdapter::toDomain);
+        super(repository, mapper, SolicitudRepositoryAdapter::aDominio);
     }
 
     @Override
-    public Solicitud save(Solicitud solicitud) {
+    public Solicitud guardar(Solicitud solicitud) {
         UUID id = solicitud.getId() == null ? UUID.randomUUID() : solicitud.getId();
         Solicitud saved = super.save(solicitud.toBuilder().id(id).build());
         LOGGER.info("Solicitud guardada con id {}.", id);
@@ -39,8 +39,8 @@ public class SolicitudRepositoryAdapter
     }
 
     @Override
-    public PageResult<Solicitud> findForReview(FiltroRevision filtro) {
-        Pageable pageable = PageRequest.of(filtro.page(), filtro.size(), OLDEST_FIRST);
+    public Pagina<Solicitud> buscarParaRevision(FiltroRevision filtro) {
+        Pageable pageable = PageRequest.of(filtro.pagina(), filtro.tamano(), MAS_ANTIGUAS_PRIMERO);
         Page<SolicitudEntity> page = filtro.tipoPrestamo() == null
                 ? repository.findByEstadoIn(filtro.estados(), pageable)
                 : repository.findByEstadoInAndTipoPrestamo(
@@ -48,11 +48,11 @@ public class SolicitudRepositoryAdapter
 
         LOGGER.info("Consulta de revisión: {} de {} solicitudes.",
                 page.getNumberOfElements(), page.getTotalElements());
-        return new PageResult<>(toList(page), filtro.page(), filtro.size(), page.getTotalElements());
+        return new Pagina<>(toList(page), filtro.pagina(), filtro.tamano(), page.getTotalElements());
     }
 
     @Override
-    public List<Solicitud> findApprovedByDocumentos(Collection<String> documentos) {
+    public List<Solicitud> buscarAprobadasPorDocumentos(Collection<String> documentos) {
         if (documentos.isEmpty()) {
             return List.of();
         }
@@ -60,7 +60,7 @@ public class SolicitudRepositoryAdapter
                 EstadoSolicitud.APROBADA, documentos));
     }
 
-    /** Explicit mapping: the domain model is immutable-by-builder and has no JPA annotations. */
+    /** Mapeo explícito: el modelo de dominio es inmutable (builder) y no tiene anotaciones JPA. */
     @Override
     protected SolicitudEntity toData(Solicitud solicitud) {
         return SolicitudEntity.builder()
@@ -73,7 +73,7 @@ public class SolicitudRepositoryAdapter
                 .build();
     }
 
-    private static Solicitud toDomain(SolicitudEntity entity) {
+    private static Solicitud aDominio(SolicitudEntity entity) {
         return Solicitud.builder()
                 .id(entity.getId())
                 .documentoIdentidad(entity.getDocumentoIdentidad())

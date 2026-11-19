@@ -16,7 +16,7 @@ class TipoPrestamoRepositoryAdapterTest {
 
     @Test
     void findsSeededLoanTypes() {
-        assertTrue(adapter.existsByNombre("VEHICULO"));
-        assertFalse(adapter.existsByNombre("INEXISTENTE"));
+        assertTrue(adapter.existePorNombre("VEHICULO"));
+        assertFalse(adapter.existePorNombre("INEXISTENTE"));
     }
 }

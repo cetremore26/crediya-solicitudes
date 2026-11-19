@@ -10,7 +10,7 @@ public record SolicitudRequest(
         @JsonProperty("plazo_meses") Integer plazoMeses,
         @JsonProperty("tipo_prestamo") String tipoPrestamo) {
 
-    public Solicitud toDomain() {
+    public Solicitud aDominio() {
         return Solicitud.builder()
                 .documentoIdentidad(documentoIdentidad)
                 .monto(monto)

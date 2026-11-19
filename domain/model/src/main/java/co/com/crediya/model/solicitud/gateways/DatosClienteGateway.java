@@ -5,6 +5,6 @@ import java.util.Collection;
 import java.util.List;
 
 public interface DatosClienteGateway {
-    /** Data of the applicants that exist for the given documents; unknown ones are omitted. */
-    List<DatosCliente> findByDocumentos(Collection<String> documentos);
+    /** Datos de los solicitantes que existan para los documentos indicados; omite los desconocidos. */
+    List<DatosCliente> buscarPorDocumentos(Collection<String> documentos);
 }
