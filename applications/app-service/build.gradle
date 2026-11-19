@@ -13,6 +13,11 @@ dependencies {
     runtimeOnly('org.springframework.boot:spring-boot-devtools')
     testImplementation 'com.tngtech.archunit:archunit:1.5.1'
     testImplementation 'tools.jackson.core:jackson-databind'
+    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
+    testImplementation 'org.springframework:spring-jdbc'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
+    testImplementation 'com.nimbusds:nimbus-jose-jwt:10.5'
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.register('explodedJar', Copy) {
