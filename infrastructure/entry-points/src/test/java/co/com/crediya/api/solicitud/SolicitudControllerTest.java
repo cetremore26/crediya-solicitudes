@@ -18,6 +18,7 @@ import co.com.crediya.model.solicitud.DatosCliente;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.SolicitudConTasa;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
@@ -185,14 +186,13 @@ class SolicitudControllerTest {
                 .plazoMeses(24)
                 .tipoPrestamo("VEHICULO")
                 .estado(EstadoSolicitud.REVISION_MANUAL)
-                .tasaInteres(new BigDecimal("14.00"))
                 .build();
         DatosCliente cliente = new DatosCliente(
                 "1020304050", "Ana", "Pérez", "ana@example.com", new BigDecimal("4000000"));
         when(listarUseCase.execute(
                         List.of(EstadoSolicitud.REVISION_MANUAL), "VEHICULO", 1, 5, CLIENTE))
                 .thenReturn(new Pagina<>(
-                        List.of(new SolicitudRevision(solicitud, cliente, new BigDecimal("250000.00"))),
+                        List.of(new SolicitudRevision(new SolicitudConTasa(solicitud, new BigDecimal("14.00")), cliente, new BigDecimal("250000.00"))),
                         1, 5, 6));
 
         mockMvc.perform(get(URL)
@@ -222,10 +222,9 @@ class SolicitudControllerTest {
                 .plazoMeses(12)
                 .tipoPrestamo("VEHICULO")
                 .estado(EstadoSolicitud.RECHAZADA)
-                .tasaInteres(new BigDecimal("14.00"))
                 .build();
         when(listarUseCase.execute(null, null, 0, 10, CLIENTE)).thenReturn(new Pagina<>(
-                List.of(new SolicitudRevision(solicitud, null, BigDecimal.ZERO)), 0, 10, 1));
+                List.of(new SolicitudRevision(new SolicitudConTasa(solicitud, new BigDecimal("14.00")), null, BigDecimal.ZERO)), 0, 10, 1));
 
         mockMvc.perform(get(URL))
                 .andExpect(status().isOk())

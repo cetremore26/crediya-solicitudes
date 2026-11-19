@@ -11,9 +11,9 @@ import lombok.Getter;
 
 /**
  * Solicitud de préstamo. Además de los datos, conoce sus propias reglas:
- * cómo se normaliza ({@link #normalizado()}), cuándo es válida ({@link #validar()})
- * y cuál es su cuota mensual ({@link #cuotaMensual()}).
- * Es inmutable: los cambios se hacen con {@code toBuilder()}.
+ * cómo se normaliza ({@link #normalizado()}) y cuándo es válida ({@link #validar()}).
+ * La cuota mensual depende de la tasa del tipo de préstamo y se calcula en
+ * {@link SolicitudConTasa#cuotaMensual()}. Es inmutable: los cambios se hacen con {@code toBuilder()}.
  */
 @Getter
 @AllArgsConstructor
@@ -27,8 +27,6 @@ public class Solicitud {
     private Integer plazoMeses;
     private String tipoPrestamo;
     private EstadoSolicitud estado;
-    /** Tasa de interés anual (%) del tipo de préstamo; solo se llena al leer solicitudes. */
-    private BigDecimal tasaInteres;
 
     /**
      * Devuelve una copia con los datos limpios: documento sin espacios y tipo de préstamo
@@ -61,19 +59,6 @@ public class Solicitud {
         if (tipoPrestamo == null) {
             throw new SolicitudInvalidaException("El tipo de préstamo es obligatorio.");
         }
-    }
-
-    /**
-     * Cuota mensual de la solicitud según la tasa de interés de su tipo de préstamo.
-     *
-     * @throws IllegalStateException si la solicitud no trae la tasa (solo se llena al leerla)
-     */
-    public BigDecimal cuotaMensual() {
-        if (tasaInteres == null) {
-            throw new IllegalStateException(
-                    "La solicitud " + id + " no tiene la tasa de interés de su tipo de préstamo.");
-        }
-        return CalculadoraCuotaMensual.calcular(monto, plazoMeses, tasaInteres);
     }
 
     /** Tipo de préstamo sin espacios y en mayúsculas, o {@code null} si viene vacío. */

@@ -10,6 +10,7 @@ import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.FiltroRevision;
 import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.SolicitudConTasa;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
@@ -72,12 +73,12 @@ class SolicitudRepositoryAdapterTest {
         save("222222", "VIVIENDA", EstadoSolicitud.REVISION_MANUAL);
         save("333333", "VEHICULO", EstadoSolicitud.APROBADA);
 
-        Pagina<Solicitud> page =
+        Pagina<SolicitudConTasa> page =
                 adapter.buscarParaRevision(new FiltroRevision(ALL_REVIEW_STATES, null, 0, 10));
 
         assertEquals(2, page.totalElementos());
-        assertEquals("111111", page.contenido().get(0).getDocumentoIdentidad());
-        assertEquals(0, new BigDecimal("14.00").compareTo(page.contenido().get(0).getTasaInteres()));
+        assertEquals("111111", page.contenido().get(0).documentoIdentidad());
+        assertEquals(0, new BigDecimal("14.00").compareTo(page.contenido().get(0).tasaInteres()));
     }
 
     @Test
@@ -86,14 +87,14 @@ class SolicitudRepositoryAdapterTest {
         save("222222", "VIVIENDA", EstadoSolicitud.PENDIENTE_DE_REVISION);
         save("333333", "VIVIENDA", EstadoSolicitud.RECHAZADA);
 
-        Pagina<Solicitud> byType = adapter.buscarParaRevision(
+        Pagina<SolicitudConTasa> byType = adapter.buscarParaRevision(
                 new FiltroRevision(ALL_REVIEW_STATES, "VIVIENDA", 0, 10));
-        Pagina<Solicitud> byState = adapter.buscarParaRevision(
+        Pagina<SolicitudConTasa> byState = adapter.buscarParaRevision(
                 new FiltroRevision(Set.of(EstadoSolicitud.RECHAZADA), null, 0, 10));
 
         assertEquals(2, byType.totalElementos());
         assertEquals(1, byState.totalElementos());
-        assertEquals("333333", byState.contenido().get(0).getDocumentoIdentidad());
+        assertEquals("333333", byState.contenido().get(0).documentoIdentidad());
     }
 
     @Test
@@ -102,7 +103,7 @@ class SolicitudRepositoryAdapterTest {
             save("10000" + i, "VEHICULO", EstadoSolicitud.PENDIENTE_DE_REVISION);
         }
 
-        Pagina<Solicitud> secondPage =
+        Pagina<SolicitudConTasa> secondPage =
                 adapter.buscarParaRevision(new FiltroRevision(ALL_REVIEW_STATES, null, 1, 2));
 
         assertEquals(5, secondPage.totalElementos());
@@ -116,10 +117,10 @@ class SolicitudRepositoryAdapterTest {
         save("111111", "VEHICULO", EstadoSolicitud.RECHAZADA);
         save("222222", "VEHICULO", EstadoSolicitud.APROBADA);
 
-        List<Solicitud> approved = adapter.buscarAprobadasPorDocumentos(List.of("111111"));
+        List<SolicitudConTasa> approved = adapter.buscarAprobadasPorDocumentos(List.of("111111"));
 
         assertEquals(1, approved.size());
-        assertTrue(approved.get(0).getTasaInteres().signum() > 0);
+        assertTrue(approved.get(0).tasaInteres().signum() > 0);
         assertTrue(adapter.buscarAprobadasPorDocumentos(List.of()).isEmpty());
     }
 

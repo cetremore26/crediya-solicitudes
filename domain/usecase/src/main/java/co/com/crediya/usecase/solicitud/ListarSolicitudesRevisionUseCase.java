@@ -5,7 +5,7 @@ import co.com.crediya.model.solicitud.DatosCliente;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.FiltroRevision;
 import co.com.crediya.model.solicitud.Pagina;
-import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.SolicitudConTasa;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.gateways.DatosClienteGateway;
@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Lista las solicitudes que requieren revisión manual, con los datos del cliente y su deuda
  * mensual. Solo orquesta: las reglas del filtro viven en {@link FiltroRevision}, el cálculo
- * de la cuota en {@link Solicitud#cuotaMensual()} y quién puede revisar en
+ * de la cuota en {@link SolicitudConTasa#cuotaMensual()} y quién puede revisar en
  * {@link UsuarioAutenticado#puedeRevisarSolicitudes()}.
  */
 @RequiredArgsConstructor
@@ -37,9 +37,9 @@ public class ListarSolicitudesRevisionUseCase {
         }
         FiltroRevision filtro = FiltroRevision.de(estados, tipoPrestamo, page, size);
 
-        Pagina<Solicitud> solicitudes = solicitudConsultaRepository.buscarParaRevision(filtro);
+        Pagina<SolicitudConTasa> solicitudes = solicitudConsultaRepository.buscarParaRevision(filtro);
         List<String> documentos = solicitudes.contenido().stream()
-                .map(Solicitud::getDocumentoIdentidad)
+                .map(SolicitudConTasa::documentoIdentidad)
                 .distinct()
                 .toList();
         if (documentos.isEmpty()) {
@@ -53,14 +53,14 @@ public class ListarSolicitudesRevisionUseCase {
 
         return solicitudes.map(solicitud -> new SolicitudRevision(
                 solicitud,
-                clientes.get(solicitud.getDocumentoIdentidad()),
-                deudas.getOrDefault(solicitud.getDocumentoIdentidad(), BigDecimal.ZERO)));
+                clientes.get(solicitud.documentoIdentidad()),
+                deudas.getOrDefault(solicitud.documentoIdentidad(), BigDecimal.ZERO)));
     }
 
     private Map<String, BigDecimal> deudaMensualPorDocumento(Collection<String> documentos) {
         return solicitudConsultaRepository.buscarAprobadasPorDocumentos(documentos).stream()
                 .collect(Collectors.groupingBy(
-                        Solicitud::getDocumentoIdentidad,
-                        Collectors.reducing(BigDecimal.ZERO, Solicitud::cuotaMensual, BigDecimal::add)));
+                        SolicitudConTasa::documentoIdentidad,
+                        Collectors.reducing(BigDecimal.ZERO, SolicitudConTasa::cuotaMensual, BigDecimal::add)));
     }
 }
