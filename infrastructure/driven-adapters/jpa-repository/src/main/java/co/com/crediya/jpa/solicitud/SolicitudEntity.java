@@ -25,6 +25,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.domain.Persistable;
 
+/**
+ * Implementa {@link Persistable}: el id lo asigna la aplicación, así que sin esto Spring Data
+ * no sabría que la entidad es nueva y haría un SELECT (merge) antes de cada INSERT.
+ */
 @Entity
 @Table(name = "solicitudes")
 @Getter
@@ -32,10 +36,6 @@ import org.springframework.data.domain.Persistable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-/**
- * Implementa {@link Persistable}: el id lo asigna la aplicación, así que sin esto Spring Data
- * no sabría que la entidad es nueva y haría un SELECT (merge) antes de cada INSERT.
- */
 public class SolicitudEntity implements Persistable<UUID> {
     @Id
     @Column(name = "id")

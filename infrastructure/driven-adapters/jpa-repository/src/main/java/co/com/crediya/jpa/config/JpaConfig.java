@@ -36,8 +36,9 @@ public class JpaConfig {
     }
 
     /**
-     * The schema and seed data are owned by schema.sql (spring.sql.init), so Hibernate does not
-     * manage DDL unless spring.jpa.hibernate.ddl-auto says otherwise.
+     * El esquema y los datos iniciales los crean las migraciones de Flyway ({@code db/migration});
+     * Hibernate solo hace lo que indique {@code spring.jpa.hibernate.ddl-auto} ({@code validate}
+     * en la aplicación).
      */
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
