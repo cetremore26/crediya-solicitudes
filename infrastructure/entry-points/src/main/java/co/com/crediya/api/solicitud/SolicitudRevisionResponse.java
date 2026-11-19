@@ -21,7 +21,7 @@ public record SolicitudRevisionResponse(
         @JsonProperty("deuda_total_mensual_solicitudes_aprobadas") BigDecimal deudaTotalMensual) {
 
     public static SolicitudRevisionResponse desde(SolicitudRevision revision) {
-        Solicitud solicitud = revision.solicitud();
+        Solicitud solicitud = revision.solicitud().solicitud();
         DatosCliente cliente = revision.cliente();
         return new SolicitudRevisionResponse(
                 solicitud.getId(),
@@ -30,7 +30,7 @@ public record SolicitudRevisionResponse(
                 cliente == null ? null : cliente.correoElectronico(),
                 cliente == null ? null : cliente.nombreCompleto(),
                 solicitud.getTipoPrestamo(),
-                solicitud.getTasaInteres(),
+                revision.solicitud().tasaInteres(),
                 solicitud.getEstado().getDescripcion(),
                 solicitud.getEstado().name(),
                 cliente == null ? null : cliente.salarioBase(),

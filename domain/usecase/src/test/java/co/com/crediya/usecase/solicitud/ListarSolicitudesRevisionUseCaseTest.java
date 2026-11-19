@@ -10,6 +10,7 @@ import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.FiltroRevision;
 import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.SolicitudConTasa;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.gateways.DatosClienteGateway;
 import co.com.crediya.model.solicitud.gateways.SolicitudConsultaRepository;
@@ -31,18 +32,18 @@ class ListarSolicitudesRevisionUseCaseTest {
     private static final String DOC_SIN_USUARIO = "999999";
 
     private final List<FiltroRevision> receivedFilters = new ArrayList<>();
-    private final List<Solicitud> pending = new ArrayList<>();
-    private final List<Solicitud> approved = new ArrayList<>();
+    private final List<SolicitudConTasa> pending = new ArrayList<>();
+    private final List<SolicitudConTasa> approved = new ArrayList<>();
 
     private final SolicitudConsultaRepository repository = new SolicitudConsultaRepository() {
         @Override
-        public Pagina<Solicitud> buscarParaRevision(FiltroRevision filtro) {
+        public Pagina<SolicitudConTasa> buscarParaRevision(FiltroRevision filtro) {
             receivedFilters.add(filtro);
             return new Pagina<>(pending, filtro.pagina(), filtro.tamano(), pending.size());
         }
 
         @Override
-        public List<Solicitud> buscarAprobadasPorDocumentos(Collection<String> documentos) {
+        public List<SolicitudConTasa> buscarAprobadasPorDocumentos(Collection<String> documentos) {
             return approved;
         }
     };
@@ -117,15 +118,14 @@ class ListarSolicitudesRevisionUseCaseTest {
         assertDoesNotThrow(() -> withDuplicates.execute(null, null, 0, 10, ASESOR));
     }
 
-    private Solicitud solicitud(
+    private SolicitudConTasa solicitud(
             String documento, EstadoSolicitud estado, String monto, int plazo, String tasa) {
-        return Solicitud.builder()
+        return new SolicitudConTasa(Solicitud.builder()
                 .documentoIdentidad(documento)
                 .estado(estado)
                 .monto(new BigDecimal(monto))
                 .plazoMeses(plazo)
                 .tipoPrestamo("VEHICULO")
-                .tasaInteres(new BigDecimal(tasa))
-                .build();
+                .build(), new BigDecimal(tasa));
     }
 }

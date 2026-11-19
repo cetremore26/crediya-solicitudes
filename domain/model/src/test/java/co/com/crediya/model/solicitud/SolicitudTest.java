@@ -61,17 +61,6 @@ class SolicitudTest {
                 SolicitudInvalidaException.class, () -> solicitud.normalizado().validar()));
     }
 
-    @Test
-    void calculatesMonthlyPaymentWithItsInterestRate() {
-        Solicitud solicitud = validSolicitud().toBuilder()
-                .monto(new BigDecimal("1200000"))
-                .plazoMeses(12)
-                .tasaInteres(BigDecimal.ZERO)
-                .build();
-
-        assertEquals(new BigDecimal("100000.00"), solicitud.cuotaMensual());
-    }
-
     private Solicitud validSolicitud() {
         return Solicitud.builder()
                 .documentoIdentidad("1020304050")
@@ -79,16 +68,5 @@ class SolicitudTest {
                 .plazoMeses(24)
                 .tipoPrestamo("LIBRE_INVERSION")
                 .build();
-    }
-
-    @Test
-    void monthlyPaymentRequiresTheInterestRate() {
-        Solicitud sinTasa = Solicitud.builder()
-                .monto(new BigDecimal("1000000"))
-                .plazoMeses(12)
-                .tipoPrestamo("VEHICULO")
-                .build();
-
-        assertThrows(IllegalStateException.class, sinTasa::cuotaMensual);
     }
 }

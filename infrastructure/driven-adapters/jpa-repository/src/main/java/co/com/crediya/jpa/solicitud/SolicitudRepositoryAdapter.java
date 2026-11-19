@@ -5,6 +5,7 @@ import co.com.crediya.model.solicitud.EstadoSolicitud;
 import co.com.crediya.model.solicitud.FiltroRevision;
 import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
+import co.com.crediya.model.solicitud.SolicitudConTasa;
 import co.com.crediya.model.solicitud.gateways.SolicitudConsultaRepository;
 import co.com.crediya.model.solicitud.gateways.SolicitudRepository;
 import java.util.Collection;
@@ -39,7 +40,7 @@ public class SolicitudRepositoryAdapter
     }
 
     @Override
-    public Pagina<Solicitud> buscarParaRevision(FiltroRevision filtro) {
+    public Pagina<SolicitudConTasa> buscarParaRevision(FiltroRevision filtro) {
         Pageable pageable = PageRequest.of(filtro.pagina(), filtro.tamano(), MAS_ANTIGUAS_PRIMERO);
         Page<SolicitudEntity> page = filtro.tipoPrestamo() == null
                 ? repository.findByEstadoIn(filtro.estados(), pageable)
@@ -48,15 +49,16 @@ public class SolicitudRepositoryAdapter
 
         LOGGER.info("Consulta de revisión: {} de {} solicitudes.",
                 page.getNumberOfElements(), page.getTotalElements());
-        return new Pagina<>(toList(page), filtro.pagina(), filtro.tamano(), page.getTotalElements());
+        return new Pagina<>(
+                aConsulta(page.getContent()), filtro.pagina(), filtro.tamano(), page.getTotalElements());
     }
 
     @Override
-    public List<Solicitud> buscarAprobadasPorDocumentos(Collection<String> documentos) {
+    public List<SolicitudConTasa> buscarAprobadasPorDocumentos(Collection<String> documentos) {
         if (documentos.isEmpty()) {
             return List.of();
         }
-        return toList(repository.findByEstadoAndDocumentoIdentidadIn(
+        return aConsulta(repository.findByEstadoAndDocumentoIdentidadIn(
                 EstadoSolicitud.APROBADA, documentos));
     }
 
@@ -81,7 +83,13 @@ public class SolicitudRepositoryAdapter
                 .plazoMeses(entity.getPlazoMeses())
                 .tipoPrestamo(entity.getTipoPrestamo())
                 .estado(entity.getEstado())
-                .tasaInteres(entity.getTipo() == null ? null : entity.getTipo().getTasaInteres())
                 .build();
+    }
+
+    /** La tasa sale del tipo de préstamo, que la llave foránea garantiza que existe. */
+    private static List<SolicitudConTasa> aConsulta(List<SolicitudEntity> entities) {
+        return entities.stream()
+                .map(entity -> new SolicitudConTasa(aDominio(entity), entity.getTipo().getTasaInteres()))
+                .toList();
     }
 }
