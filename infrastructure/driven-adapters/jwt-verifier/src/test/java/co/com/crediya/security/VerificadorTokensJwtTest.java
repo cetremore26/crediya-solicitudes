@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import co.com.crediya.model.autenticacion.UsuarioAutenticado;
 import co.com.crediya.model.autenticacion.Rol;
 import co.com.crediya.model.autenticacion.exception.TokenInvalidoException;
+import co.com.crediya.model.autenticacion.exception.VerificacionTokensNoDisponibleException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.KeySourceException;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -82,6 +84,24 @@ class VerificadorTokensJwtTest {
         assertThrows(TokenInvalidoException.class, () -> verificador.verificar(unknownRole));
         assertThrows(TokenInvalidoException.class, () -> verificador.verificar(badSubject));
         assertThrows(TokenInvalidoException.class, () -> verificador.verificar("no-es-un-jwt"));
+    }
+
+    @Test
+    void reportsUnavailableKeysInsteadOfAnInvalidToken() throws Exception {
+        VerificadorTokensJwt sinClaves = new VerificadorTokensJwt((selector, context) -> {
+            throw new KeySourceException("JWKS no disponible");
+        });
+        String token = sign(AUTH_KEY, claims());
+
+        assertThrows(VerificacionTokensNoDisponibleException.class, () -> sinClaves.verificar(token));
+    }
+
+    @Test
+    void reportsUnavailableKeysWhenTheJwksEndpointDoesNotRespond() throws Exception {
+        VerificadorTokensJwt sinServicio = new VerificadorTokensJwt("http://127.0.0.1:1/.well-known/jwks.json");
+        String token = sign(AUTH_KEY, claims());
+
+        assertThrows(VerificacionTokensNoDisponibleException.class, () -> sinServicio.verificar(token));
     }
 
     @Test
