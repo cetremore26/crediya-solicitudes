@@ -30,12 +30,12 @@ public class ListarSolicitudesRevisionUseCase {
     private final DatosClienteGateway datosClienteGateway;
 
     public Pagina<SolicitudRevision> execute(
-            Collection<EstadoSolicitud> estados, String tipoPrestamo, int page, int size,
+            Collection<EstadoSolicitud> estados, String tipoPrestamo, int pagina, int tamano,
             UsuarioAutenticado solicitante) {
         if (solicitante == null || !solicitante.puedeRevisarSolicitudes()) {
             throw new AccesoDenegadoException("Solo un asesor puede revisar solicitudes.");
         }
-        FiltroRevision filtro = FiltroRevision.de(estados, tipoPrestamo, page, size);
+        FiltroRevision filtro = FiltroRevision.de(estados, tipoPrestamo, pagina, tamano);
 
         Pagina<SolicitudConTasa> solicitudes = solicitudConsultaRepository.buscarParaRevision(filtro);
         List<String> documentos = solicitudes.contenido().stream()

@@ -61,9 +61,9 @@ public class SolicitudController {
             @RequestBody SolicitudRequest request,
             @AuthenticationPrincipal UsuarioAutenticado solicitante) {
         LOGGER.info("Solicitud de préstamo recibida.");
-        Solicitud registered = registrarSolicitudUseCase.execute(request.aDominio(), solicitante);
-        LOGGER.info("Solicitud de préstamo registrada con id {}.", registered.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(SolicitudResponse.desde(registered));
+        Solicitud registrada = registrarSolicitudUseCase.execute(request.aDominio(), solicitante);
+        LOGGER.info("Solicitud de préstamo registrada con id {}.", registrada.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(SolicitudResponse.desde(registrada));
     }
 
     @GetMapping
@@ -84,8 +84,8 @@ public class SolicitudController {
             @RequestParam(value = "tamano", defaultValue = "10") int tamano,
             @AuthenticationPrincipal UsuarioAutenticado solicitante) {
         LOGGER.info("Consulta de solicitudes para revisión: pagina={}, tamano={}.", pagina, tamano);
-        Pagina<SolicitudRevision> page =
+        Pagina<SolicitudRevision> resultado =
                 listarSolicitudesRevisionUseCase.execute(estados, tipoPrestamo, pagina, tamano, solicitante);
-        return ResponseEntity.ok(PaginaResponse.desde(page, SolicitudRevisionResponse::desde));
+        return ResponseEntity.ok(PaginaResponse.desde(resultado, SolicitudRevisionResponse::desde));
     }
 }

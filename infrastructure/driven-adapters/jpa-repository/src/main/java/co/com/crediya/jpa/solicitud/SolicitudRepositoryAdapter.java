@@ -34,23 +34,23 @@ public class SolicitudRepositoryAdapter
     @Override
     public Solicitud guardar(Solicitud solicitud) {
         UUID id = solicitud.getId() == null ? UUID.randomUUID() : solicitud.getId();
-        Solicitud saved = super.save(solicitud.toBuilder().id(id).build());
+        Solicitud guardada = super.save(solicitud.toBuilder().id(id).build());
         LOGGER.info("Solicitud guardada con id {}.", id);
-        return saved;
+        return guardada;
     }
 
     @Override
     public Pagina<SolicitudConTasa> buscarParaRevision(FiltroRevision filtro) {
         Pageable pageable = PageRequest.of(filtro.pagina(), filtro.tamano(), MAS_ANTIGUAS_PRIMERO);
-        Page<SolicitudEntity> page = filtro.tipoPrestamo() == null
+        Page<SolicitudEntity> resultado = filtro.tipoPrestamo() == null
                 ? repository.findByEstadoIn(filtro.estados(), pageable)
                 : repository.findByEstadoInAndTipoPrestamo(
                         filtro.estados(), filtro.tipoPrestamo(), pageable);
 
         LOGGER.info("Consulta de revisión: {} de {} solicitudes.",
-                page.getNumberOfElements(), page.getTotalElements());
+                resultado.getNumberOfElements(), resultado.getTotalElements());
         return new Pagina<>(
-                aConsulta(page.getContent()), filtro.pagina(), filtro.tamano(), page.getTotalElements());
+                aConsulta(resultado.getContent()), filtro.pagina(), filtro.tamano(), resultado.getTotalElements());
     }
 
     @Override

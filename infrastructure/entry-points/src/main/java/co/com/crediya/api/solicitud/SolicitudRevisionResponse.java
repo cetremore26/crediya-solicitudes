@@ -18,7 +18,7 @@ public record SolicitudRevisionResponse(
         @JsonProperty("estado_solicitud") String estadoSolicitud,
         @JsonProperty("estado_codigo") String estadoCodigo,
         @JsonProperty("salario_base") BigDecimal salarioBase,
-        @JsonProperty("deuda_total_mensual_solicitudes_aprobadas") BigDecimal deudaTotalMensual) {
+        @JsonProperty("deuda_total_mensual_solicitudes_aprobadas") BigDecimal deudaMensualAprobadas) {
 
     public static SolicitudRevisionResponse desde(SolicitudRevision revision) {
         Solicitud solicitud = revision.solicitud().solicitud();
