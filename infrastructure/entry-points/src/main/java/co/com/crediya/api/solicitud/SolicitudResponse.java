@@ -14,7 +14,7 @@ public record SolicitudResponse(
         String estado,
         @JsonProperty("estado_codigo") String estadoCodigo) {
 
-    public static SolicitudResponse from(Solicitud solicitud) {
+    public static SolicitudResponse desde(Solicitud solicitud) {
         return new SolicitudResponse(
                 solicitud.getId(),
                 solicitud.getDocumentoIdentidad(),

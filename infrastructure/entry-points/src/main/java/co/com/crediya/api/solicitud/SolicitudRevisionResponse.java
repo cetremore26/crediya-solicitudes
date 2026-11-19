@@ -11,8 +11,8 @@ public record SolicitudRevisionResponse(
         UUID id,
         BigDecimal monto,
         @JsonProperty("plazo_meses") Integer plazoMeses,
-        String email,
-        String nombre,
+        @JsonProperty("correo_electronico") String correoElectronico,
+        @JsonProperty("nombre_completo") String nombreCompleto,
         @JsonProperty("tipo_prestamo") String tipoPrestamo,
         @JsonProperty("tasa_interes") BigDecimal tasaInteres,
         @JsonProperty("estado_solicitud") String estadoSolicitud,
@@ -20,7 +20,7 @@ public record SolicitudRevisionResponse(
         @JsonProperty("salario_base") BigDecimal salarioBase,
         @JsonProperty("deuda_total_mensual_solicitudes_aprobadas") BigDecimal deudaTotalMensual) {
 
-    public static SolicitudRevisionResponse from(SolicitudRevision revision) {
+    public static SolicitudRevisionResponse desde(SolicitudRevision revision) {
         Solicitud solicitud = revision.solicitud();
         DatosCliente cliente = revision.cliente();
         return new SolicitudRevisionResponse(

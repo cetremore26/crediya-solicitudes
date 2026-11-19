@@ -1,44 +1,44 @@
 package co.com.crediya.model.solicitud;
 
-import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.model.solicitud.exception.SolicitudInvalidaException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * Filter and paging options to list applications that need a manual decision.
- * Use {@link #of} to build a valid, normalized filter.
+ * Filtro y paginación para listar las solicitudes que necesitan una decisión manual.
+ * Se construye con {@link #de} para que sea válido y esté normalizado.
  */
 public record FiltroRevision(
-        Set<EstadoSolicitud> estados, String tipoPrestamo, int page, int size) {
-    public static final int MAXIMUM_PAGE_SIZE = 50;
-    private static final Set<EstadoSolicitud> REVIEW_STATES = EnumSet.copyOf(
+        Set<EstadoSolicitud> estados, String tipoPrestamo, int pagina, int tamano) {
+    public static final int TAMANO_MAXIMO_PAGINA = 50;
+    private static final Set<EstadoSolicitud> ESTADOS_REVISABLES = EnumSet.copyOf(
             Arrays.stream(EstadoSolicitud.values()).filter(EstadoSolicitud::esRevisable).toList());
 
     /**
-     * Builds a filter: without states it uses every review state, and the loan type is
-     * normalized like {@link Solicitud#normalizeTipoPrestamo}.
+     * Construye un filtro: sin estados usa todos los estados revisables, y el tipo de préstamo
+     * se normaliza como en {@link Solicitud#normalizarTipoPrestamo}.
      *
-     * @throws SolicitudValidationException when the paging or the states are not allowed
+     * @throws SolicitudInvalidaException si la paginación o los estados no están permitidos
      */
-    public static FiltroRevision of(
-            Collection<EstadoSolicitud> estados, String tipoPrestamo, int page, int size) {
-        if (page < 0) {
-            throw new SolicitudValidationException("La página no puede ser negativa.");
+    public static FiltroRevision de(
+            Collection<EstadoSolicitud> estados, String tipoPrestamo, int pagina, int tamano) {
+        if (pagina < 0) {
+            throw new SolicitudInvalidaException("La página no puede ser negativa.");
         }
-        if (size < 1 || size > MAXIMUM_PAGE_SIZE) {
-            throw new SolicitudValidationException(
-                    "El tamaño de página debe estar entre 1 y " + MAXIMUM_PAGE_SIZE + ".");
+        if (tamano < 1 || tamano > TAMANO_MAXIMO_PAGINA) {
+            throw new SolicitudInvalidaException(
+                    "El tamaño de página debe estar entre 1 y " + TAMANO_MAXIMO_PAGINA + ".");
         }
-        Set<EstadoSolicitud> requestedStates = estados == null || estados.isEmpty()
-                ? REVIEW_STATES
+        Set<EstadoSolicitud> estadosPedidos = estados == null || estados.isEmpty()
+                ? ESTADOS_REVISABLES
                 : EnumSet.copyOf(estados);
-        if (!REVIEW_STATES.containsAll(requestedStates)) {
-            throw new SolicitudValidationException(
+        if (!ESTADOS_REVISABLES.containsAll(estadosPedidos)) {
+            throw new SolicitudInvalidaException(
                     "Solo se pueden listar solicitudes pendientes de revisión, rechazadas o en revisión manual.");
         }
         return new FiltroRevision(
-                requestedStates, Solicitud.normalizeTipoPrestamo(tipoPrestamo), page, size);
+                estadosPedidos, Solicitud.normalizarTipoPrestamo(tipoPrestamo), pagina, tamano);
     }
 }

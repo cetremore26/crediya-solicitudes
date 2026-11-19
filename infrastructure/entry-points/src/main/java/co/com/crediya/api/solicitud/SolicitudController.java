@@ -1,14 +1,14 @@
 package co.com.crediya.api.solicitud;
 
-import co.com.crediya.api.ApiErrorResponse;
-import co.com.crediya.api.PageResponse;
-import co.com.crediya.model.auth.AuthenticatedUser;
+import co.com.crediya.api.ErrorApiResponse;
+import co.com.crediya.api.PaginaResponse;
+import co.com.crediya.model.autenticacion.UsuarioAutenticado;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
-import co.com.crediya.model.solicitud.PageResult;
+import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.SolicitudRevision;
-import co.com.crediya.usecase.solicitud.ListSolicitudesRevisionUseCase;
-import co.com.crediya.usecase.solicitud.RegisterSolicitudUseCase;
+import co.com.crediya.usecase.solicitud.ListarSolicitudesRevisionUseCase;
+import co.com.crediya.usecase.solicitud.RegistrarSolicitudUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,14 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class SolicitudController {
     private static final Logger LOGGER = LoggerFactory.getLogger(SolicitudController.class);
 
-    private final RegisterSolicitudUseCase registerSolicitudUseCase;
-    private final ListSolicitudesRevisionUseCase listSolicitudesRevisionUseCase;
+    private final RegistrarSolicitudUseCase registrarSolicitudUseCase;
+    private final ListarSolicitudesRevisionUseCase listarSolicitudesRevisionUseCase;
 
     public SolicitudController(
-            RegisterSolicitudUseCase registerSolicitudUseCase,
-            ListSolicitudesRevisionUseCase listSolicitudesRevisionUseCase) {
-        this.registerSolicitudUseCase = registerSolicitudUseCase;
-        this.listSolicitudesRevisionUseCase = listSolicitudesRevisionUseCase;
+            RegistrarSolicitudUseCase registrarSolicitudUseCase,
+            ListarSolicitudesRevisionUseCase listarSolicitudesRevisionUseCase) {
+        this.registrarSolicitudUseCase = registrarSolicitudUseCase;
+        this.listarSolicitudesRevisionUseCase = listarSolicitudesRevisionUseCase;
     }
 
     @PostMapping
@@ -48,22 +48,22 @@ public class SolicitudController {
             description = "Registra una solicitud con estado inicial 'Pendiente de revisión'.")
     @ApiResponse(responseCode = "201", description = "Solicitud registrada exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos inválidos o tipo de préstamo inexistente",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+            content = @Content(schema = @Schema(implementation = ErrorApiResponse.class)))
     @ApiResponse(responseCode = "422", description = "El cliente no existe",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+            content = @Content(schema = @Schema(implementation = ErrorApiResponse.class)))
     @ApiResponse(responseCode = "502", description = "El servicio de usuarios rechazó la consulta",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+            content = @Content(schema = @Schema(implementation = ErrorApiResponse.class)))
     @ApiResponse(responseCode = "503", description = "No fue posible verificar al cliente",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+            content = @Content(schema = @Schema(implementation = ErrorApiResponse.class)))
     @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Solo clientes, y solo a su nombre")
-    public ResponseEntity<SolicitudResponse> register(
+    public ResponseEntity<SolicitudResponse> registrar(
             @RequestBody SolicitudRequest request,
-            @AuthenticationPrincipal AuthenticatedUser solicitante) {
+            @AuthenticationPrincipal UsuarioAutenticado solicitante) {
         LOGGER.info("Solicitud de préstamo recibida.");
-        Solicitud registered = registerSolicitudUseCase.execute(request.toDomain(), solicitante);
+        Solicitud registered = registrarSolicitudUseCase.execute(request.aDominio(), solicitante);
         LOGGER.info("Solicitud de préstamo registrada con id {}.", registered.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(SolicitudResponse.from(registered));
+        return ResponseEntity.status(HttpStatus.CREATED).body(SolicitudResponse.desde(registered));
     }
 
     @GetMapping
@@ -72,20 +72,20 @@ public class SolicitudController {
                     + "rechazadas o en revisión manual, filtrable por estado y tipo de préstamo.")
     @ApiResponse(responseCode = "200", description = "Página de solicitudes")
     @ApiResponse(responseCode = "400", description = "Filtros o paginación inválidos",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+            content = @Content(schema = @Schema(implementation = ErrorApiResponse.class)))
     @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Solo el rol ASESOR puede consultar")
     @ApiResponse(responseCode = "503", description = "No fue posible obtener los datos de los clientes",
-            content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
-    public ResponseEntity<PageResponse<SolicitudRevisionResponse>> listForReview(
+            content = @Content(schema = @Schema(implementation = ErrorApiResponse.class)))
+    public ResponseEntity<PaginaResponse<SolicitudRevisionResponse>> listarParaRevision(
             @RequestParam(value = "estado", required = false) List<EstadoSolicitud> estados,
             @RequestParam(value = "tipo_prestamo", required = false) String tipoPrestamo,
             @RequestParam(value = "pagina", defaultValue = "0") int pagina,
             @RequestParam(value = "tamano", defaultValue = "10") int tamano,
-            @AuthenticationPrincipal AuthenticatedUser solicitante) {
+            @AuthenticationPrincipal UsuarioAutenticado solicitante) {
         LOGGER.info("Consulta de solicitudes para revisión: pagina={}, tamano={}.", pagina, tamano);
-        PageResult<SolicitudRevision> page =
-                listSolicitudesRevisionUseCase.execute(estados, tipoPrestamo, pagina, tamano, solicitante);
-        return ResponseEntity.ok(PageResponse.from(page, SolicitudRevisionResponse::from));
+        Pagina<SolicitudRevision> page =
+                listarSolicitudesRevisionUseCase.execute(estados, tipoPrestamo, pagina, tamano, solicitante);
+        return ResponseEntity.ok(PaginaResponse.desde(page, SolicitudRevisionResponse::desde));
     }
 }

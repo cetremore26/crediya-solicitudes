@@ -8,8 +8,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import co.com.crediya.model.solicitud.exception.ClienteServiceRejectedException;
-import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosRechazoException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosNoDisponibleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -35,14 +35,14 @@ class ClienteGatewayAdapterTest {
         server.expect(requestTo(URL))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
-        assertTrue(adapter.existsByDocumentoIdentidad("1020304050"));
+        assertTrue(adapter.existePorDocumentoIdentidad("1020304050"));
     }
 
     @Test
     void returnsFalseWhenClientDoesNotExist() {
         server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        assertFalse(adapter.existsByDocumentoIdentidad("1020304050"));
+        assertFalse(adapter.existePorDocumentoIdentidad("1020304050"));
     }
 
     @Test
@@ -50,8 +50,8 @@ class ClienteGatewayAdapterTest {
         server.expect(requestTo(URL)).andRespond(withServerError());
 
         assertThrows(
-                ClienteServiceUnavailableException.class,
-                () -> adapter.existsByDocumentoIdentidad("1020304050"));
+                ServicioUsuariosNoDisponibleException.class,
+                () -> adapter.existePorDocumentoIdentidad("1020304050"));
     }
 
     @Test
@@ -59,7 +59,7 @@ class ClienteGatewayAdapterTest {
         server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.FORBIDDEN));
 
         assertThrows(
-                ClienteServiceRejectedException.class,
-                () -> adapter.existsByDocumentoIdentidad("1020304050"));
+                ServicioUsuariosRechazoException.class,
+                () -> adapter.existePorDocumentoIdentidad("1020304050"));
     }
 }

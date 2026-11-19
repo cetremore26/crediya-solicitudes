@@ -8,8 +8,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import co.com.crediya.model.solicitud.DatosCliente;
-import co.com.crediya.model.solicitud.exception.ClienteServiceRejectedException;
-import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosRechazoException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosNoDisponibleException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ class DatosClienteGatewayAdapterTest {
                   "campo_nuevo": "ignorado"}]
                 """, MediaType.APPLICATION_JSON));
 
-        List<DatosCliente> clientes = adapter.findByDocumentos(List.of("111111", "222222"));
+        List<DatosCliente> clientes = adapter.buscarPorDocumentos(List.of("111111", "222222"));
 
         assertEquals(1, clientes.size());
         assertEquals("ana@example.com", clientes.get(0).correoElectronico());
@@ -50,15 +50,15 @@ class DatosClienteGatewayAdapterTest {
     void throwsUnavailableWhenUsersServiceFails() {
         server.expect(requestTo(URL)).andRespond(withServerError());
 
-        assertThrows(ClienteServiceUnavailableException.class,
-                () -> adapter.findByDocumentos(List.of("111111", "222222")));
+        assertThrows(ServicioUsuariosNoDisponibleException.class,
+                () -> adapter.buscarPorDocumentos(List.of("111111", "222222")));
     }
 
     @Test
     void throwsRejectedWhenUsersServiceRefusesTheQuery() {
         server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
-        assertThrows(ClienteServiceRejectedException.class,
-                () -> adapter.findByDocumentos(List.of("111111", "222222")));
+        assertThrows(ServicioUsuariosRechazoException.class,
+                () -> adapter.buscarPorDocumentos(List.of("111111", "222222")));
     }
 }

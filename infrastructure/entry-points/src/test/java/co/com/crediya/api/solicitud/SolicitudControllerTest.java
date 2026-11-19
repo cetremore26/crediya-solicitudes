@@ -11,22 +11,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import co.com.crediya.api.ApiExceptionHandler;
-import co.com.crediya.model.auth.AuthenticatedUser;
-import co.com.crediya.model.auth.Rol;
+import co.com.crediya.api.ManejadorErroresApi;
+import co.com.crediya.model.autenticacion.UsuarioAutenticado;
+import co.com.crediya.model.autenticacion.Rol;
 import co.com.crediya.model.solicitud.DatosCliente;
 import co.com.crediya.model.solicitud.EstadoSolicitud;
-import co.com.crediya.model.solicitud.PageResult;
+import co.com.crediya.model.solicitud.Pagina;
 import co.com.crediya.model.solicitud.Solicitud;
 import co.com.crediya.model.solicitud.SolicitudRevision;
 import co.com.crediya.model.solicitud.exception.AccesoDenegadoException;
 import co.com.crediya.model.solicitud.exception.ClienteNoEncontradoException;
-import co.com.crediya.model.solicitud.exception.ClienteServiceRejectedException;
-import co.com.crediya.model.solicitud.exception.ClienteServiceUnavailableException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosRechazoException;
+import co.com.crediya.model.solicitud.exception.ServicioUsuariosNoDisponibleException;
 import co.com.crediya.model.solicitud.exception.TipoPrestamoNoExisteException;
-import co.com.crediya.usecase.solicitud.ListSolicitudesRevisionUseCase;
-import co.com.crediya.usecase.solicitud.RegisterSolicitudUseCase;
-import co.com.crediya.model.solicitud.exception.SolicitudValidationException;
+import co.com.crediya.usecase.solicitud.ListarSolicitudesRevisionUseCase;
+import co.com.crediya.usecase.solicitud.RegistrarSolicitudUseCase;
+import co.com.crediya.model.solicitud.exception.SolicitudInvalidaException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -51,19 +51,19 @@ class SolicitudControllerTest {
             }
             """;
 
-    private static final AuthenticatedUser CLIENTE = new AuthenticatedUser(
+    private static final UsuarioAutenticado CLIENTE = new UsuarioAutenticado(
             UUID.randomUUID(), "ana@example.com", Rol.CLIENTE, "1020304050");
 
-    private RegisterSolicitudUseCase useCase;
-    private ListSolicitudesRevisionUseCase listUseCase;
+    private RegistrarSolicitudUseCase useCase;
+    private ListarSolicitudesRevisionUseCase listarUseCase;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        useCase = mock(RegisterSolicitudUseCase.class);
-        listUseCase = mock(ListSolicitudesRevisionUseCase.class);
-        mockMvc = MockMvcBuilders.standaloneSetup(new SolicitudController(useCase, listUseCase))
-                .setControllerAdvice(new ApiExceptionHandler())
+        useCase = mock(RegistrarSolicitudUseCase.class);
+        listarUseCase = mock(ListarSolicitudesRevisionUseCase.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new SolicitudController(useCase, listarUseCase))
+                .setControllerAdvice(new ManejadorErroresApi())
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
         SecurityContextHolder.getContext().setAuthentication(
@@ -77,7 +77,7 @@ class SolicitudControllerTest {
 
     @Test
     void registersSolicitudAndReturnsCreatedWithPendingStatus() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenReturn(Solicitud.builder()
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class))).thenReturn(Solicitud.builder()
                 .id(UUID.randomUUID())
                 .documentoIdentidad("1020304050")
                 .monto(new BigDecimal("5000000"))
@@ -98,8 +98,8 @@ class SolicitudControllerTest {
 
     @Test
     void returnsBadRequestForValidationErrors() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
-                .thenThrow(new SolicitudValidationException("El monto debe ser mayor a cero."));
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class)))
+                .thenThrow(new SolicitudInvalidaException("El monto debe ser mayor a cero."));
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isBadRequest())
@@ -108,7 +108,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsBadRequestForUnknownLoanType() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new TipoPrestamoNoExisteException());
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class))).thenThrow(new TipoPrestamoNoExisteException());
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isBadRequest())
@@ -117,7 +117,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsForbiddenWhenClientActsForAnotherPerson() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class)))
                 .thenThrow(new AccesoDenegadoException("Solo puede registrar solicitudes de préstamo a su nombre."));
 
         mockMvc.perform(postJson(VALID_BODY))
@@ -127,7 +127,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsUnprocessableContentForUnknownClient() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new ClienteNoEncontradoException());
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class))).thenThrow(new ClienteNoEncontradoException());
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isUnprocessableContent())
@@ -136,8 +136,8 @@ class SolicitudControllerTest {
 
     @Test
     void returnsServiceUnavailableWhenClientServiceFails() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class)))
-                .thenThrow(new ClienteServiceUnavailableException(new RuntimeException("boom")));
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class)))
+                .thenThrow(new ServicioUsuariosNoDisponibleException(new RuntimeException("boom")));
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isServiceUnavailable())
@@ -146,7 +146,7 @@ class SolicitudControllerTest {
 
     @Test
     void hidesUnexpectedErrorDetails() throws Exception {
-        when(useCase.execute(any(Solicitud.class), any(AuthenticatedUser.class))).thenThrow(new IllegalStateException("secreto"));
+        when(useCase.execute(any(Solicitud.class), any(UsuarioAutenticado.class))).thenThrow(new IllegalStateException("secreto"));
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isInternalServerError())
@@ -189,9 +189,9 @@ class SolicitudControllerTest {
                 .build();
         DatosCliente cliente = new DatosCliente(
                 "1020304050", "Ana", "Pérez", "ana@example.com", new BigDecimal("4000000"));
-        when(listUseCase.execute(
+        when(listarUseCase.execute(
                         List.of(EstadoSolicitud.REVISION_MANUAL), "VEHICULO", 1, 5, CLIENTE))
-                .thenReturn(new PageResult<>(
+                .thenReturn(new Pagina<>(
                         List.of(new SolicitudRevision(solicitud, cliente, new BigDecimal("250000.00"))),
                         1, 5, 6));
 
@@ -203,8 +203,8 @@ class SolicitudControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total_elementos").value(6))
                 .andExpect(jsonPath("$.total_paginas").value(2))
-                .andExpect(jsonPath("$.contenido[0].email").value("ana@example.com"))
-                .andExpect(jsonPath("$.contenido[0].nombre").value("Ana Pérez"))
+                .andExpect(jsonPath("$.contenido[0].correo_electronico").value("ana@example.com"))
+                .andExpect(jsonPath("$.contenido[0].nombre_completo").value("Ana Pérez"))
                 .andExpect(jsonPath("$.contenido[0].estado_solicitud").value("Revisión manual"))
                 .andExpect(jsonPath("$.contenido[0].estado_codigo").value("REVISION_MANUAL"))
                 .andExpect(jsonPath("$.contenido[0].tasa_interes").value(14.00))
@@ -224,12 +224,12 @@ class SolicitudControllerTest {
                 .estado(EstadoSolicitud.RECHAZADA)
                 .tasaInteres(new BigDecimal("14.00"))
                 .build();
-        when(listUseCase.execute(null, null, 0, 10, CLIENTE)).thenReturn(new PageResult<>(
+        when(listarUseCase.execute(null, null, 0, 10, CLIENTE)).thenReturn(new Pagina<>(
                 List.of(new SolicitudRevision(solicitud, null, BigDecimal.ZERO)), 0, 10, 1));
 
         mockMvc.perform(get(URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.contenido[0].email").isEmpty())
+                .andExpect(jsonPath("$.contenido[0].correo_electronico").isEmpty())
                 .andExpect(jsonPath("$.contenido[0].estado_solicitud").value("Rechazada"));
     }
 
@@ -242,8 +242,8 @@ class SolicitudControllerTest {
 
     @Test
     void returnsBadRequestForInvalidPaging() throws Exception {
-        when(listUseCase.execute(null, null, 0, 500, CLIENTE))
-                .thenThrow(new SolicitudValidationException("El tamaño de página es inválido."));
+        when(listarUseCase.execute(null, null, 0, 500, CLIENTE))
+                .thenThrow(new SolicitudInvalidaException("El tamaño de página es inválido."));
 
         mockMvc.perform(get(URL).param("tamano", "500"))
                 .andExpect(status().isBadRequest())
@@ -252,7 +252,7 @@ class SolicitudControllerTest {
 
     @Test
     void returnsBadGatewayWhenUsersServiceRejectsTheQuery() throws Exception {
-        when(useCase.execute(any(), any())).thenThrow(new ClienteServiceRejectedException(403));
+        when(useCase.execute(any(), any())).thenThrow(new ServicioUsuariosRechazoException(403));
 
         mockMvc.perform(postJson(VALID_BODY))
                 .andExpect(status().isBadGateway())
