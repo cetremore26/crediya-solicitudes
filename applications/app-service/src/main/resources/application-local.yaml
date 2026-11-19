@@ -4,3 +4,11 @@
 spring:
   datasource:
     password: ${DB_PASSWORD:crediya_solicitudes_pass}
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+jwt:
+  # En local el servicio de autenticación se expone por HTTP.
+  allow-insecure-jwks-uri: true

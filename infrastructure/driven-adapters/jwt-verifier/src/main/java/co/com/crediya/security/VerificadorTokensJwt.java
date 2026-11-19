@@ -35,7 +35,8 @@ import org.springframework.stereotype.Component;
  *
  * <p>Los tokens se firman con RS256 y aquí solo se verifican con la clave pública publicada en
  * {@code jwt.jwks-uri}: este servicio no tiene ningún secreto con el que pudiera emitirlos.
- * Las claves se descargan la primera vez que se necesitan y se guardan en caché.
+ * Las claves se descargan la primera vez que se necesitan y se guardan en caché. La URL debe
+ * ser HTTPS salvo que {@code jwt.allow-insecure-jwks-uri} lo permita explícitamente.
  */
 @Component
 public class VerificadorTokensJwt implements VerificadorTokens {
@@ -53,8 +54,10 @@ public class VerificadorTokensJwt implements VerificadorTokens {
     private final ConfigurableJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
 
     @Autowired
-    public VerificadorTokensJwt(@Value("${jwt.jwks-uri}") String jwksUri) {
-        this(clavesRemotas(jwksUri));
+    public VerificadorTokensJwt(
+            @Value("${jwt.jwks-uri}") String jwksUri,
+            @Value("${jwt.allow-insecure-jwks-uri:false}") boolean permitirHttp) {
+        this(clavesRemotas(jwksUri, permitirHttp));
     }
 
     VerificadorTokensJwt(JWKSource<SecurityContext> keys) {
@@ -82,10 +85,19 @@ public class VerificadorTokensJwt implements VerificadorTokens {
         }
     }
 
-    private static JWKSource<SecurityContext> clavesRemotas(String jwksUri) {
+    private static JWKSource<SecurityContext> clavesRemotas(String jwksUri, boolean permitirHttp) {
         try {
+            URI uri = URI.create(jwksUri);
+            boolean https = "https".equalsIgnoreCase(uri.getScheme());
+            if (!https && !(permitirHttp && "http".equalsIgnoreCase(uri.getScheme()))) {
+                throw new IllegalStateException("jwt.jwks-uri debe usar HTTPS (o activar "
+                        + "jwt.allow-insecure-jwks-uri en una red de confianza): " + jwksUri);
+            }
+            if (!https) {
+                LOGGER.warn("Las claves públicas se descargan por HTTP sin cifrar: {}", jwksUri);
+            }
             return JWKSourceBuilder
-                    .create(URI.create(jwksUri).toURL(), new DefaultResourceRetriever(
+                    .create(uri.toURL(), new DefaultResourceRetriever(
                             TIEMPO_ESPERA_JWKS_MS, TIEMPO_ESPERA_JWKS_MS, LIMITE_BYTES_JWKS))
                     .retrying(true)
                     .build();
